@@ -439,7 +439,11 @@ export async function exportMarkdown(
   const images = imageOptions(options);
   checkExportAbort(options.signal);
   const { images: _images, ...openOptions } = options;
-  const opened = await openDocumentForExport(source, openOptions);
+  // The session lays out once and is disposed, so a live view keeps no incremental state.
+  const opened = await openDocumentForExport(source, {
+    ...openOptions,
+    reuseAcrossRevisions: openOptions.reuseAcrossRevisions ?? false,
+  });
   if (!opened.ok) {
     if (opened.reason === 'aborted') {
       throw new ExportResourceError('aborted', 'Export was aborted before layout', {

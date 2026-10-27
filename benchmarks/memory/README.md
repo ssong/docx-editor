@@ -71,7 +71,7 @@ Both halves force garbage collection before each reading. A reading is the memor
 | --- | --- |
 | `modules loaded` | Imports `@docx-editor.dev/core/store` and `@docx-editor.dev/core/export`. This is the baseline. |
 | `open` | `openHeadlessDocument(bytes)`: parse, canonical tree, and store. |
-| `layout` | `openDocumentForExport(view).layout()` with the fixed measurer: the PDF export and page-count path. |
+| `layout` | `openDocumentForExport(view, { reuseAcrossRevisions: false }).layout()` with the fixed measurer: the PDF export and page-count path, which lay out once and dispose the session. |
 | `release` | Disposes the export session and drops the view. Memory that stays is held by module-level state. |
 | `reopen store` | `readOoxmlPackage` and a new `TreePackageStore`, for the edit stage. |
 | `edit xN` | N single-character `insertText` transactions. Each one is an undo step. |

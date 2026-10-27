@@ -80,10 +80,13 @@ export function createAutomationPaginationProvider(
   options: AutomationPaginationOptions
 ): AutomationPaginationProvider {
   return async (view) => {
+    // One layout per call, then dispose: retaining incremental state across revisions only
+    // keeps the paragraph cache and construction state alive until the session is dropped.
     const opened = openDocumentForExport(view, {
       measurer: options.measurer,
       producer: options.producer,
       displayMode: 'proposed',
+      reuseAcrossRevisions: false,
     });
     if (!opened.ok) throw new Error('field pagination could not open the document');
     try {
