@@ -7,6 +7,7 @@ import { growLineMetricsForText, lineBandText, type PendingLine } from './pendin
 import { displayText } from './run-style.ts';
 import { styleForFontSlot } from './script-itemization.ts';
 import type { StyleSpanRecord, TextMeasurer } from './semantic-records.ts';
+import { withBox } from './compact-box.ts';
 
 /** Where the word being placed opened on its line, and the line state before it. */
 export interface WordStart {
@@ -90,7 +91,7 @@ function relayWord(context: WordCarryContext, carried: readonly StyleSpanRecord[
     line.width += gap;
     line.spans.push(
       withAutomaticTextSpacing(
-        { ...span, box: { ...span.box, x: context.lineOrigin() + line.width } },
+        { ...span, box: withBox(span.box, { x: context.lineOrigin() + line.width }) },
         gap
       )
     );

@@ -17,7 +17,10 @@ if (typeof globalThis.gc !== 'function') throw new Error('Run with node --expose
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { edits: { type: 'string', default: '200' } },
+  options: {
+    edits: { type: 'string', default: '200' },
+    'layout-options': { type: 'string', default: '{}' },
+  },
 });
 const file = positionals[0];
 if (!file) throw new Error('Pass the document path.');
@@ -76,7 +79,7 @@ let opened = await stage('open', () => {
 let session = null;
 let pages = 0;
 await stage('layout', async () => {
-  const result = exporter.openDocumentForExport(opened);
+  const result = exporter.openDocumentForExport(opened, JSON.parse(values['layout-options']));
   if (!result.ok) throw new Error(`export open failed: ${result.reason}`);
   session = result.session;
   const layout = await session.layout();

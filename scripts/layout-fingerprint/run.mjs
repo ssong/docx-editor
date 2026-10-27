@@ -25,6 +25,7 @@ const { values } = parseArgs({
     filter: { type: 'string' },
     jobs: { type: 'string', default: String(Math.max(1, Math.min(availableParallelism(), 8))) },
     timeout: { type: 'string', default: '300' },
+    'export-options': { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -42,6 +43,8 @@ Options:
   --filter <text>     only documents whose name contains this text
   --jobs <n>          documents laid out at the same time (default: CPU count, at most 8)
   --timeout <s>       seconds before one document counts as failed (default: 300)
+  --export-options <json>
+                      extra options for the export session, as JSON
 
 Build the packages of --root first: bun run --filter '@docx-editor.dev/i18n' build &&
 bun run --filter '@docx-editor.dev/core' build && bun run --filter '@docx-editor.dev/fonts' build`);
@@ -106,6 +109,7 @@ function layOut(document, measurer) {
         root,
         '--measurer',
         measurer,
+        ...(values['export-options'] ? ['--export-options', values['export-options']] : []),
         ...document.args,
       ],
       { stdio: ['ignore', 'pipe', 'pipe'] }

@@ -7,6 +7,7 @@ import {
 import { readLegacyPageField } from './legacy-footer-page-field.ts';
 import { shiftParagraphFragment } from './note-fragment-geometry.ts';
 import type { BlockFragmentRecord, ParagraphFragmentRecord } from './semantic-records.ts';
+import { withBox } from './compact-box.ts';
 
 const isElement = (node: OoxmlNode): node is OoxmlElement => node.kind !== 'textValue';
 const isW = (node: OoxmlNode, name: string): boolean =>
@@ -171,7 +172,10 @@ export function positionRightFooterPageFrame<
         ...line,
         box: { ...line.box, x: ink.left + dx, width },
         contentX: line.contentX + dx,
-        spans: line.spans.map((span) => ({ ...span, box: { ...span.box, x: span.box.x + dx } })),
+        spans: line.spans.map((span) => ({
+          ...span,
+          box: withBox(span.box, { x: span.box.x + dx }),
+        })),
       },
     ],
   };

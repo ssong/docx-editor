@@ -9,6 +9,7 @@ import { readLegacyPageField } from './legacy-footer-page-field.ts';
 import { paragraphFrameAttributes, translateParagraphFragment } from './paragraph-frame.ts';
 import { shiftParagraphFragment } from './note-fragment-geometry.ts';
 import type { BlockFragmentRecord, ParagraphFragmentRecord } from './semantic-records.ts';
+import { withBox } from './compact-box.ts';
 
 const MAX_PT = 31_680 / 20;
 const isElement = (node: OoxmlNode): node is OoxmlElement => node.kind !== 'textValue';
@@ -193,7 +194,10 @@ export function positionFixedFooterPageFrame<
       ...item,
       box: { ...item.box, x: item.box.x + dx },
       contentX: item.contentX + dx,
-      spans: item.spans.map((span) => ({ ...span, box: { ...span.box, x: span.box.x + dx } })),
+      spans: item.spans.map((span) => ({
+        ...span,
+        box: withBox(span.box, { x: span.box.x + dx }),
+      })),
     })),
   };
   return { ...flow, blocks: [clipped, shiftedAnchor], bottom: shiftedAnchor.box.height };

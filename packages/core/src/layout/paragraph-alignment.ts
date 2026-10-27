@@ -13,6 +13,7 @@ import {
 } from './trailing-spaces.ts';
 import { alignBidiTrailingSpaces, bidiTrailingSpaces } from './bidi-trailing-spaces.ts';
 import { alignPassageSpans, partUsedWidth, type LinePassage } from './passage-alignment.ts';
+import { withBox } from './compact-box.ts';
 
 const OVERFLOW_TOLERANCE_PT = 0.001;
 const SLACK_RESIDUE_PT = 1e-9;
@@ -105,7 +106,9 @@ function alignBeforeIgnoredBreaks(
   const shift = after.box.x + after.box.width - (before.box.x + before.box.width);
   return [
     ...aligned,
-    ...spans.slice(end).map((span) => ({ ...span, box: { ...span.box, x: span.box.x + shift } })),
+    ...spans
+      .slice(end)
+      .map((span) => ({ ...span, box: withBox(span.box, { x: span.box.x + shift }) })),
   ];
 }
 
@@ -185,10 +188,11 @@ function alignLogicalSpans(
     const clipsAtMargin = (lineUsedWidth ?? 0) >= available - OVERFLOW_TOLERANCE_PT;
     let fillX = spans[trailingStart]!.box.x + offset;
     return spans.map((span, index) => {
-      if (index < trailingStart) return { ...span, box: { ...span.box, x: span.box.x + offset } };
-      if (!clipsAtMargin) return { ...span, box: { ...span.box, x: span.box.x + offset } };
+      if (index < trailingStart)
+        return { ...span, box: withBox(span.box, { x: span.box.x + offset }) };
+      if (!clipsAtMargin) return { ...span, box: withBox(span.box, { x: span.box.x + offset }) };
       const width = Math.min(span.box.width, Math.max(0, indentLeft + available - fillX));
-      const aligned = { ...span, box: { ...span.box, x: fillX, width } };
+      const aligned = { ...span, box: withBox(span.box, { x: fillX, width }) };
       fillX += width;
       return aligned;
     });
@@ -333,19 +337,19 @@ function alignLogicalSpans(
     if (gapBefore.length === 0) {
       if (!paragraphRtl) return spans;
       const start = slack - rtlTrailingAdvance;
-      return spans.map((span) => ({ ...span, box: { ...span.box, x: span.box.x + start } }));
+      return spans.map((span) => ({ ...span, box: withBox(span.box, { x: span.box.x + start }) }));
     }
     const step = slack / gapBefore.length;
     const gapSet = new Set(gapBefore);
     let shift = 0;
     return spans.map((span, index) => {
       if (gapSet.has(index)) shift += step;
-      return shift === 0 ? span : { ...span, box: { ...span.box, x: span.box.x + shift } };
+      return shift === 0 ? span : { ...span, box: withBox(span.box, { x: span.box.x + shift }) };
     });
   }
 
   const offset = (alignment === 'center' ? slack / 2 : slack) - rtlTrailingAdvance;
-  return spans.map((span) => ({ ...span, box: { ...span.box, x: span.box.x + offset } }));
+  return spans.map((span) => ({ ...span, box: withBox(span.box, { x: span.box.x + offset }) }));
 }
 
 /**
