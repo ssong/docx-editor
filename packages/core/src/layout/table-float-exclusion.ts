@@ -45,6 +45,7 @@ import {
 import { hasCompatibilityRule } from './compatibility/compatibility-rules.ts';
 import type { StyleCascadeTable } from './style-cascade.ts';
 import type { RevisionAuthorFilter, RevisionDisplayMode } from './revision-projection.ts';
+import { spanStoryBox } from './span-box.ts';
 
 /**
  * A table's structure for float placement. A table that floats is read at the widths
@@ -760,7 +761,7 @@ export function clearEarlierText(
     .flatMap((block) => {
       if (block.kind === 'table') return block.floatingWrap ? [] : [block.box];
       return block.lines.flatMap((line) => [
-        ...line.spans.filter((span) => span.text.trim()).map((span) => span.box),
+        ...line.spans.filter((span) => span.text.trim()).map((span) => spanStoryBox(line, span)),
         ...(line.drawings ?? []).map((drawing) => drawing.paintBounds),
       ]);
     })

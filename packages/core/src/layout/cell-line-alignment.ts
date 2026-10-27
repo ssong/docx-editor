@@ -13,7 +13,7 @@ import {
   lineAlignOffset,
   type Alignment,
 } from './paragraph-alignment.ts';
-import type { PendingLine } from './pending-line.ts';
+import { placeLineSpans, type PendingLine } from './pending-line.ts';
 import type { TextMeasurer } from './semantic-records.ts';
 import type { StyleCascadeTable } from './style-cascade.ts';
 
@@ -27,12 +27,14 @@ export interface CellLineAlignment {
   readonly inTableCell: boolean;
 }
 
-/** Place `pendingLine`'s spans at `penX` and `y`, then align them with the line's pictures. */
+/**
+ * Place `pendingLine`'s spans at `penX`, then align them with the line's pictures. Span boxes
+ * are vertically relative to their line, so the line's top does not enter.
+ */
 export function alignCellLine(
   pendingLine: PendingLine,
   paragraphId: string,
   penX: number,
-  y: number,
   placedDrawings: readonly InlineDrawingRecord[],
   lineIndent: number,
   lineAvailableWidth: number,
@@ -40,12 +42,8 @@ export function alignCellLine(
   shared: CellLineAlignment
 ): ReturnType<typeof alignLineWithPictures> {
   const { alignment } = shared;
-  const placedSpans = pendingLine.spans.map((span) => ({
-    ...span,
-    // A cell paragraph breaks under its own id, so its spans share the broken range.
-    range: span.range.paragraphId === paragraphId ? span.range : { ...span.range, paragraphId },
-    box: { ...span.box, x: span.box.x + penX, y },
-  }));
+  // A cell paragraph breaks under its own id, so its spans share the broken range.
+  const placedSpans = placeLineSpans(pendingLine.spans, paragraphId, penX);
   // A float in the cell leaves the line passages; the line aligns inside them, as in the body.
   // Placement mirrors a right-to-left line, which records no passages.
   const measure = lineAlignmentMeasure(pendingLine, penX, lineIndent, lineAvailableWidth);

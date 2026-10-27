@@ -11,6 +11,7 @@ import { clipInlineDrawingRecordVertically, type InlineDrawingRecord } from './d
 import { topAndBottomSkipBeforeLine, type ExclusionZone } from './drawing-exclusion.ts';
 import type { ModelRange } from './field-pieces.ts';
 import type { WrapSegment } from './line-wrap-passages.ts';
+import type { ParagraphLayoutCache } from './layout-cache.ts';
 import { PAGE_BREAK_CHAR } from '@docx-editor.dev/core/store';
 
 export interface PendingLine {
@@ -436,17 +437,41 @@ export function pendingLineFlowExtentAtPlacement(
 }
 
 /**
+ * Store a paragraph's broken lines in the paragraph cache and return the lines to place.
+ *
+ * A retained entry is frozen, and the frozen lines are what the caller places on a miss as on
+ * every later hit. So the published lines and the cache share each span (`placeLineSpans`).
+ */
+export function cacheBrokenLines(
+  cache: ParagraphLayoutCache<readonly PendingLine[]>,
+  cacheKey: string,
+  lines: readonly PendingLine[]
+): readonly PendingLine[] {
+  const entry = cache.retainAcrossPasses === false ? lines : lines.map(frozenLine);
+  cache.set(cacheKey, entry);
+  return entry;
+}
+
+/** Freeze a broken span and its box in place: the cache and the published line share it. */
+function frozenSpan(span: StyleSpanRecord): StyleSpanRecord {
+  if (Object.isFrozen(span)) return span;
+  Object.freeze(span.box);
+  return Object.freeze(span);
+}
+
+/**
  * A cached line, safe to hand back on every later hit.
  *
  * Placement copies span boxes rather than mutating them, but a cache entry outlives the
  * layout that produced it — freezing means a future change to the placement path cannot
  * quietly corrupt every subsequent reuse.
+ *
+ * The spans are frozen in place, not copied: placement publishes a span that keeps its x as
+ * the same object ({@link placeLineSpans}), so the cache and the laid-out page hold one copy.
  */
 export function frozenLine(line: PendingLine): PendingLine {
   return Object.freeze({
-    spans: line.spans.map((span) =>
-      Object.freeze({ ...span, box: Object.freeze({ ...span.box }) })
-    ),
+    spans: Object.freeze(line.spans.map(frozenSpan)) as StyleSpanRecord[],
     drawings: line.drawings.map((drawing) =>
       Object.freeze({
         ...drawing,
@@ -480,6 +505,38 @@ export function frozenLine(line: PendingLine): PendingLine {
     ...(line.anchorRevisions ? { anchorRevisions: Object.freeze(line.anchorRevisions) } : {}),
     ...(line.changeSites ? { changeSites: Object.freeze(line.changeSites) } : {}),
   }) as PendingLine;
+}
+
+/**
+ * A broken line's spans at their placed x, for a paragraph line at `penX`.
+ *
+ * A span's box is vertically relative to its line (`y` is the offset from the line top, zero
+ * for every span the flow breaks), so placement moves only `x`. A span that keeps its x and
+ * names its paragraph is then the broken span itself: the published line shares it with the
+ * paragraph cache instead of holding a second copy. The spans array is shared the same way.
+ */
+export function placeLineSpans(
+  spans: readonly StyleSpanRecord[],
+  paragraphId: string,
+  penX: number
+): readonly StyleSpanRecord[] {
+  let placed: StyleSpanRecord[] | undefined;
+  for (let index = 0; index < spans.length; index += 1) {
+    const span = spans[index]!;
+    // The broken range already names this paragraph unless a shared break was reused.
+    const sameParagraph = span.range.paragraphId === paragraphId;
+    if (penX === 0 && sameParagraph) {
+      placed?.push(span);
+      continue;
+    }
+    placed ??= spans.slice(0, index);
+    placed.push({
+      ...span,
+      range: sameParagraph ? span.range : { ...span.range, paragraphId },
+      box: penX === 0 ? span.box : { ...span.box, x: span.box.x + penX },
+    });
+  }
+  return placed ?? spans;
 }
 
 /**

@@ -293,7 +293,9 @@ test('clipping participates in signatures and follows vertical fragment translat
   const shifted = shiftParagraphFragment(framed!, 30);
   expect(shifted.clipToBox).toBe(true);
   expect(shifted.box.y).toBe(30);
-  expect(shifted.lines[0]!.spans[0]!.box.y).toBe(30);
+  // The line moves; its spans stay at the line top, as span boxes are line-relative.
+  expect(shifted.lines[0]!.box.y).toBe(framed!.lines[0]!.box.y + 30);
+  expect(shifted.lines[0]!.spans[0]).toBe(framed!.lines[0]!.spans[0]);
 });
 
 test('hidden PAGE glyphs have no floating caret, presence highlight or outside-frame hit', () => {

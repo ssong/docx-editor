@@ -475,30 +475,20 @@ function moveCellParagraph(
     const first = cellParagraphFirstTop(flowBox.contentTop, appliedBefore, topExtent);
     lineTop = first + pendingLineExclusionSkipAtPlacement(pending, first, NO_ZONES);
   }
-  const content = alignCellLine(
-    pending,
-    paragraph.id,
-    flowLeft,
-    lineTop,
-    [],
-    lineIndent,
-    lineWidth,
-    true,
-    {
-      measurer: deps.measurer,
-      styleCascade: deps.styleCascade,
-      props: inputs.props,
-      alignment: inputs.alignment,
-      rtl: false,
-      inTableCell: known.parts.inTableCell,
-    }
-  );
+  const content = alignCellLine(pending, paragraph.id, flowLeft, [], lineIndent, lineWidth, true, {
+    measurer: deps.measurer,
+    styleCascade: deps.styleCascade,
+    props: inputs.props,
+    alignment: inputs.alignment,
+    rtl: false,
+    inTableCell: known.parts.inTableCell,
+  });
   const spans = content.spans;
-  // Alignment moves spans along x only; anything else is not this line any more.
+  // Alignment moves spans along x only; anything else is not this line any more. Span boxes
+  // are relative to the line top, so a line at a new top keeps its spans' y.
   if (spans.length !== old.spans.length) return null;
   for (let index = 0; index < spans.length; index += 1)
-    if (spans[index]!.box.y !== (rowTop === undefined ? old.spans[index]!.box.y : lineTop))
-      return null;
+    if (spans[index]!.box.y !== old.spans[index]!.box.y) return null;
   const line = {
     ...old,
     spans,

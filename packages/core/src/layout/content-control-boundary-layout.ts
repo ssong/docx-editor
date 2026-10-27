@@ -454,7 +454,7 @@ function pageContribution(
             line: lineKey,
             box: {
               x: span.box.x + offsetX,
-              y: span.box.y + line.leading + offsetY,
+              y: line.box.y + span.box.y + line.leading + offsetY,
               width: span.box.width,
               height: textHeight,
             },
