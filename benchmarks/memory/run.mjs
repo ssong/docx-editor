@@ -45,7 +45,8 @@ Options:
   --real <paths>        comma-separated real documents to add ('' for none)
                         (default: e2e/fixtures/demo.docx,e2e/fixtures/typing-perf-521pp.docx)
   --runs <n>            repetitions per document; the report keeps the median (default: 3)
-  --target <which>      all | server | browser (default: all)
+  --target <which>      all | server | browser | pdf (default: all; all includes pdf
+                        when @docx-editor.dev/docx-to-pdf is built)
   --server-edits <n>    single-character edits in the server edit stage (default: 200)
   --browser-edits <n>   typed characters in the browser edit stage (default: 50)
   --fonts <mode>        shaped (packaged default fonts, HarfBuzz) | fixed (default: shaped)
@@ -57,14 +58,20 @@ Options:
                         the MEMORY_BENCH_CHROMIUM environment variable)
 
 Build the packages first: bun run --filter '@docx-editor.dev/i18n' build &&
-bun run --filter '@docx-editor.dev/core' build && bun run --filter '@docx-editor.dev/fonts' build`);
+bun run --filter '@docx-editor.dev/core' build && bun run --filter '@docx-editor.dev/fonts' build.
+The pdf target also needs bun run build:pdf.`);
   process.exit(0);
 }
 
 const runs = Number(values.runs);
-const targets = values.target === 'all' ? ['server', 'browser'] : [values.target];
-if (!targets.every((t) => t === 'server' || t === 'browser')) {
-  throw new Error('--target takes all, server, or browser');
+const pdfBuilt = existsSync(join(root, 'packages/docx-to-pdf/dist/index.js'));
+const targets =
+  values.target === 'all' ? ['server', 'browser', ...(pdfBuilt ? ['pdf'] : [])] : [values.target];
+if (!targets.every((t) => ['server', 'browser', 'pdf'].includes(t))) {
+  throw new Error('--target takes all, server, browser, or pdf');
+}
+if (targets.includes('pdf') && !pdfBuilt) {
+  throw new Error('Build @docx-editor.dev/docx-to-pdf first: bun run build:pdf.');
 }
 if (!['shaped', 'fixed'].includes(values.fonts)) throw new Error('--fonts takes shaped or fixed');
 if (!existsSync(join(root, 'packages/core/dist/store.js'))) {
@@ -119,13 +126,12 @@ function mergeRuns(samples) {
 }
 
 // ── Server ──
-function serverProbe(doc) {
+function probe(script, args) {
   return new Promise((done, fail) => {
-    const child = spawn(
-      process.execPath,
-      ['--expose-gc', join(here, 'server-probe.mjs'), doc.path, '--edits', values['server-edits']],
-      { cwd: root, stdio: ['ignore', 'pipe', 'inherit'] }
-    );
+    const child = spawn(process.execPath, ['--expose-gc', join(here, script), ...args], {
+      cwd: root,
+      stdio: ['ignore', 'pipe', 'inherit'],
+    });
     let out = '';
     child.stdout.on('data', (chunk) => (out += chunk));
     child.on('exit', (code) =>
@@ -140,7 +146,8 @@ async function runServer() {
   const results = [];
   for (const doc of documents) {
     const samples = [];
-    for (let i = 0; i < runs; i += 1) samples.push(await serverProbe(doc));
+    for (let i = 0; i < runs; i += 1)
+      samples.push(await probe('server-probe.mjs', [doc.path, '--edits', values['server-edits']]));
     const merged = mergeRuns(samples);
     delete merged.file;
     results.push({ document: doc.name, ...merged });
@@ -148,6 +155,26 @@ async function runServer() {
     const layout = merged.stages.find((s) => s.stage === 'layout');
     console.log(
       `server  ${doc.name.padEnd(24)} ${String(merged.pages).padStart(5)} pages  open ${open.retainedMb} MB  layout ${layout.retainedMb} MB  peak RSS ${Math.max(...merged.stages.map((s) => s.peakRssMb))} MB`
+    );
+  }
+  return results;
+}
+
+// ── PDF export ──
+async function runPdf() {
+  const results = [];
+  for (const doc of documents) {
+    const samples = [];
+    for (let i = 0; i < runs; i += 1) samples.push(await probe('pdf-probe.mjs', [doc.path]));
+    if (new Set(samples.map((s) => s.pdfSha256)).size > 1) {
+      throw new Error(`${doc.name}: the PDF bytes differ between runs`);
+    }
+    const merged = mergeRuns(samples);
+    delete merged.file;
+    results.push({ document: doc.name, ...merged });
+    const exported = merged.stages.find((s) => s.stage === 'export');
+    console.log(
+      `pdf     ${doc.name.padEnd(24)} ${String(merged.pages).padStart(5)} pages  export ${exported.ms} ms  peak RSS ${exported.peakRssMb} MB  PDF ${merged.pdfSha256.slice(0, 12)}`
     );
   }
   return results;
@@ -299,7 +326,7 @@ const report = {
   schema: 1,
   date: new Date().toISOString(),
   commit,
-  dirty: !!git('status', '--porcelain', '--', 'packages/core'),
+  dirty: !!git('status', '--porcelain', '--', 'packages/core', 'packages/docx-to-pdf'),
   environment: {
     platform: `${platform()} ${arch()}`,
     cpu: cpus()[0]?.model ?? 'unknown',
@@ -316,6 +343,7 @@ const report = {
   documents: documents.map(({ path, ...doc }) => doc),
 };
 if (targets.includes('server')) report.server = await runServer();
+if (targets.includes('pdf')) report.pdf = await runPdf();
 if (targets.includes('browser')) {
   report.browser = await runBrowser();
   const { chromium } = await import('@playwright/test');
@@ -333,18 +361,23 @@ console.log(`\nwrote ${out}`);
 if (values.compare) {
   const before = JSON.parse(readFileSync(values.compare, 'utf8'));
   console.log(`\nChange against ${values.compare} (${before.commit}):`);
-  for (const target of ['server', 'browser']) {
+  for (const target of ['server', 'browser', 'pdf']) {
+    // A PDF export keeps little once it returns; its cost is the peak while it runs.
+    const field = target === 'pdf' ? 'peakRssMb' : 'retainedMb';
     for (const now of report[target] ?? []) {
       const then = before[target]?.find((r) => r.document === now.document);
       if (!then) continue;
       for (const stage of now.stages) {
         const old = then.stages.find((s) => s.stage === stage.stage);
         if (!old) continue;
-        const delta = Math.round((stage.retainedMb - old.retainedMb) * 100) / 100;
-        const pct = old.retainedMb ? Math.round((delta / old.retainedMb) * 100) : 0;
+        const delta = Math.round((stage[field] - old[field]) * 100) / 100;
+        const pct = old[field] ? Math.round((delta / old[field]) * 100) : 0;
         console.log(
-          `${target.padEnd(8)}${now.document.padEnd(26)}${stage.stage.padEnd(16)}${String(old.retainedMb).padStart(9)} → ${String(stage.retainedMb).padStart(9)} MB  (${delta >= 0 ? '+' : ''}${delta} MB, ${pct >= 0 ? '+' : ''}${pct}%)`
+          `${target.padEnd(8)}${now.document.padEnd(26)}${stage.stage.padEnd(16)}${String(old[field]).padStart(9)} → ${String(stage[field]).padStart(9)} MB  (${delta >= 0 ? '+' : ''}${delta} MB, ${pct >= 0 ? '+' : ''}${pct}%)${target === 'pdf' ? ' peak RSS' : ''}`
         );
+      }
+      if (target === 'pdf' && then.pdfSha256 !== now.pdfSha256) {
+        console.log(`${target.padEnd(8)}${now.document.padEnd(26)}PDF bytes changed`);
       }
     }
   }

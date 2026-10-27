@@ -1,6 +1,6 @@
 # Core memory benchmark
 
-`bun run bench:memory` measures how much memory `@docx-editor.dev/core` uses for a range of document sizes, on a server (Node.js) and in a browser (Chromium). It writes a JSON report to `benchmarks/memory/results/`, so you can compare a change against an earlier run.
+`bun run bench:memory` measures how much memory `@docx-editor.dev/core` uses for a range of document sizes, on a server (Node.js) and in a browser (Chromium). It also measures the peak memory of a PDF export with `@docx-editor.dev/docx-to-pdf`. It writes a JSON report to `benchmarks/memory/results/`, so you can compare a change against an earlier run.
 
 The benchmark answers two questions:
 
@@ -15,6 +15,12 @@ The benchmark answers two questions:
    bun run --filter '@docx-editor.dev/i18n' build
    bun run --filter '@docx-editor.dev/core' build
    bun run --filter '@docx-editor.dev/fonts' build
+   ```
+
+   For the PDF export half, build the PDF package and the packages it loads:
+
+   ```bash
+   bun run build:pdf
    ```
 
 1. Run the benchmark:
@@ -44,7 +50,7 @@ If Playwright cannot find its browser, pass a Chromium executable with `--chromi
 | `--sizes` | `10,50,100,250,500,1000` | Synthetic document sizes, in content units. One unit is about one page. |
 | `--real` | `e2e/fixtures/demo.docx,e2e/fixtures/typing-perf-521pp.docx` | Real documents to add. Pass `''` for none. |
 | `--runs` | `3` | Repetitions for each document. The report keeps the median of each value. |
-| `--target` | `all` | `all`, `server`, or `browser`. |
+| `--target` | `all` | `all`, `server`, `browser`, or `pdf`. `all` includes `pdf` when `@docx-editor.dev/docx-to-pdf` is built. |
 | `--server-edits` | `200` | Single-character edits in the server edit stage. |
 | `--browser-edits` | `50` | Typed characters in the browser edit stage. |
 | `--fonts` | `shaped` | `shaped` loads the packaged default fonts in the browser, as production hosts do. `fixed` uses the fixed-width measurer. |
@@ -78,6 +84,18 @@ Both halves force garbage collection before each reading. A reading is the memor
 | `save` | `writeOoxmlPackage` on the edited package. |
 
 Each stage reports `heapUsedMb` (the V8 heap after collection), `retainedMb` (the change from `modules loaded`), `deltaMb` (the change from the previous stage), `externalMb`, `rssMb`, and `peakRssMb` (the process high-water mark, which includes short-lived garbage).
+
+### PDF export
+
+`pdf-probe.mjs` runs once for each document and repetition, in a new Node.js process with `--expose-gc`. It imports the built `@docx-editor.dev/docx-to-pdf` package and converts the document with `exportPdf`, with only the packaged fonts, so the result does not depend on the fonts that the machine has.
+
+| Stage            | What it does                                                   |
+| ---------------- | -------------------------------------------------------------- |
+| `modules loaded` | Imports `@docx-editor.dev/docx-to-pdf`. This is the baseline.  |
+| `export`         | `exportPdf(bytes)`: open, layout, paint, and save in one call. |
+| `release`        | Drops the result.                                              |
+
+The stages report the same fields as the server half. The value to watch is `peakRssMb` after `export`: the process high-water mark of the whole conversion. The export frees most of its memory before it returns, so `retainedMb` shows little. The report also keeps `layoutMs` and `paintMs` from the export timings, the size of the PDF, and its SHA-256 (`pdfSha256`). The benchmark stops if two runs of one document give different bytes, and `--compare` prints `PDF bytes changed` when the bytes differ from the earlier report.
 
 ### Browser
 

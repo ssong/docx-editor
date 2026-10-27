@@ -13,6 +13,7 @@ import { headerFooterAnchoredDrawingOrigin } from './header-footer-drawing-origi
 import { everyStoryOrder } from './document-order.ts';
 import { lineSegments } from './line-segments.ts';
 import {
+  forEachPageStory,
   forEachSemanticStory,
   forEachStoryParagraphFragment,
   type SemanticRootStoryKind,
@@ -180,17 +181,30 @@ function visitStory(
  * With `spanlessMarkers`, a paragraph fragment that publishes a list marker but no span, such
  * as an empty numbered paragraph, is visited once, in order, with an empty span on its first
  * line, so an exporter that paints markers beside spans paints its marker too.
+ * With `page`, one of `layout.pages`, only that page's spans are visited, in the order the
+ * whole-layout walk visits them, so an exporter can hold one page of visits at a time.
  * @public
  */
 export function forEachSemanticSpan(
   layout: SemanticLayout,
   visitor: (visit: SemanticSpanVisit) => void,
-  options: { readonly spanlessMarkers?: boolean } = {}
+  options: { readonly spanlessMarkers?: boolean; readonly page?: PageRecord } = {}
 ): void {
-  const paragraphOrder = new Map(
-    everyStoryOrder(layout).map((paragraphId, index) => [paragraphId, index])
-  );
-  forEachSemanticStory(layout, (story) =>
-    visitStory(story, paragraphOrder, visitor, options.spanlessMarkers === true)
-  );
+  const paragraphOrder = everyStoryOrderIndex(layout);
+  const visit = (story: SemanticStoryVisit): void =>
+    visitStory(story, paragraphOrder, visitor, options.spanlessMarkers === true);
+  if (options.page) forEachPageStory(options.page, visit);
+  else forEachSemanticStory(layout, visit);
+}
+
+const everyStoryOrderIndexCache = new WeakMap<SemanticLayout, ReadonlyMap<string, number>>();
+
+/** Every story's paragraph order as a lookup, built once per layout for page-by-page walks. */
+function everyStoryOrderIndex(layout: SemanticLayout): ReadonlyMap<string, number> {
+  let index = everyStoryOrderIndexCache.get(layout);
+  if (!index) {
+    index = new Map(everyStoryOrder(layout).map((paragraphId, order) => [paragraphId, order]));
+    everyStoryOrderIndexCache.set(layout, index);
+  }
+  return index;
 }
