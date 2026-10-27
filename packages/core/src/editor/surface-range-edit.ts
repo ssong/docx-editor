@@ -122,6 +122,34 @@ export interface SurfaceRangeEditOps {
   replacementOffset(from: SemanticPosition, to: SemanticPosition, trackedAuthor?: string): number;
 }
 
+/**
+ * A deletion plan whose `replaceAt` resolves on its first read.
+ *
+ * A class getter, not a getter in an object literal: V8 keeps a literal's getter in the
+ * literal's shared hidden class, so its closure, and through it the whole surface and its
+ * layout, outlived `destroy()` (seen in the memory benchmark at 500 pages).
+ */
+class LazyLandingPlan implements RangeDeletionPlan {
+  readonly ops: RangeDeletionPlan['ops'];
+  readonly collapseTo: SemanticPosition;
+  #resolve: (() => SemanticPosition) | null;
+  #landing: SemanticPosition | null = null;
+
+  constructor(plan: RangeDeletionPlan, resolve: () => SemanticPosition) {
+    this.ops = plan.ops;
+    this.collapseTo = plan.collapseTo;
+    this.#resolve = resolve;
+  }
+
+  get replaceAt(): SemanticPosition {
+    if (this.#resolve) {
+      this.#landing = this.#resolve();
+      this.#resolve = null;
+    }
+    return this.#landing!;
+  }
+}
+
 export function createSurfaceRangeEditOps(deps: SurfaceRangeEditDeps): SurfaceRangeEditOps {
   const { session } = deps;
   /**
@@ -279,14 +307,7 @@ export function createSurfaceRangeEditOps(deps: SurfaceRangeEditDeps): SurfaceRa
     // rectangle is captured NOW, not read at getter time: `commit` nulls `cellSelection` at
     // its head, so a late read would answer for a selection the plan was not built from.
     const rectangle = planCells();
-    let landing: SemanticPosition | null = null;
-    return {
-      ...plan,
-      get replaceAt(): SemanticPosition {
-        landing ??= replacementTarget(plan, author, rectangle);
-        return landing;
-      },
-    };
+    return new LazyLandingPlan(plan, () => replacementTarget(plan, author, rectangle));
   }
 
   /**

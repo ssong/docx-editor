@@ -338,7 +338,11 @@ export function translateParagraphFragment(
       ...line,
       box: move(line.box),
       contentX: line.contentX + dx,
-      spans: line.spans.map((span) => ({ ...span, box: move(span.box) })),
+      // Span boxes are relative to their line vertically, so only x moves.
+      spans:
+        dx === 0
+          ? line.spans
+          : line.spans.map((span) => ({ ...span, box: { ...span.box, x: span.box.x + dx } })),
       ...(line.drawings
         ? { drawings: line.drawings.map((drawing) => shiftInlineDrawingRecord(drawing, dx, dy)) }
         : {}),

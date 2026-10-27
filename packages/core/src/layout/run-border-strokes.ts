@@ -66,7 +66,7 @@ export function runBorderStrokesForLine(line: LineRecord): readonly ParagraphBor
     }
     const faceTop =
       span.borderBaselinePt === undefined
-        ? span.box.y + (line.leading ?? 0)
+        ? line.box.y + span.box.y + (line.leading ?? 0)
         : line.box.y + line.baseline - span.borderBaselinePt;
     const box = { ...span.box, y: faceTop - baselineShiftPtOf(span.style) };
     if (

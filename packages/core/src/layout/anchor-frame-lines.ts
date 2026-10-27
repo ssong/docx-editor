@@ -27,10 +27,14 @@ export function syntheticAnchorLines(
       baseline: brokenLine.baseline,
       leading: brokenLine.leading,
       trailingSpacing: brokenLine.trailingSpacing,
-      spans: brokenLine.spans.map((span) => ({
-        ...span,
-        box: { ...span.box, x: span.box.x + origin.columnX, y },
-      })),
+      // Span boxes are relative to the line top vertically, so only x moves.
+      spans:
+        origin.columnX === 0
+          ? brokenLine.spans
+          : brokenLine.spans.map((span) => ({
+              ...span,
+              box: { ...span.box, x: span.box.x + origin.columnX },
+            })),
     };
     y += brokenLine.height + (brokenLine.exclusionSkipBefore ?? 0);
     return lineRecord;

@@ -88,6 +88,7 @@ import {
 } from './semantic-paint-hf-layer.ts';
 import { anchoredDrawingsOf } from '../layout/semantic-records.ts';
 import { lineSegments } from '../layout/line-segments.ts';
+import { spanStoryBox } from '../layout/span-box.ts';
 import { pictureIsRtl } from '../layout/inline-picture-caret.ts';
 import { type AnchoredDrawingRecord } from '../layout/drawing-layout.ts';
 import {
@@ -834,14 +835,15 @@ function paintSpan(
   span: StyleSpanRecord,
   ctx: PaintContext,
   bandHeightPt: number,
-  extraLeadingPt: number
+  extraLeadingPt: number,
+  line: LineRecord
 ): HTMLElement {
   const element = document.createElement('span');
   // Ink resolves the face through the span's font slot; `span.style` itself stays the
   // run's full resolution for every consumer that reads formatting rather than glyphs.
   const faceStyle = styleForFontSlot(span.style, span.fontSlot);
   if (span.unsupported)
-    return paintUnsupportedContent(document, span.unsupported, span.box, ctx.scale);
+    return paintUnsupportedContent(document, span.unsupported, spanStoryBox(line, span), ctx.scale);
   if (span.equation) {
     if (!ctx.unbound) {
       element.dataset.paragraphId = span.range.paragraphId;
@@ -1229,7 +1231,7 @@ function paintLine(
     const band = Math.min(span.box.height + leading, line.box.height);
     const painted = span.noteSeparator
       ? paintNoteSeparatorSpan(document, span, line, scale)
-      : paintSpan(document, span, ctx, band, leading);
+      : paintSpan(document, span, ctx, band, leading, line);
     if (bidi) {
       painted.style.position = 'relative';
       painted.style.left = `${(span.box.x - line.contentX - logicalAdvance) * scale}px`;

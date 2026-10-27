@@ -4388,6 +4388,13 @@ export function spansInSelection(layout: SemanticLayout, selection: SemanticSele
 order: readonly string[]): StyleSpanRecord[];
 
 // @public
+export function spanStoryBox(line: {
+    readonly box: Pick<LayoutBox, 'y'>;
+}, span: {
+    readonly box: LayoutBox;
+}): LayoutBox;
+
+// @public
 export function storyBlocks(part: OoxmlPart, displayMode?: RevisionDisplayMode, authorFilter?: RevisionAuthorFilter, styles?: StyleCascadeTable, numberingIndex?: NumberingIndex): OoxmlElement[];
 
 // @public
@@ -4494,7 +4501,6 @@ export function styleForFontSlot(style: ResolvedRunStyle, slot: FontSlot | undef
 // @public
 export interface StyleSpanRecord {
     readonly borderBaselinePt?: number;
-    // (undocumented)
     readonly box: LayoutBox;
     readonly caretEdges?: readonly number[];
     readonly changeSites?: readonly RevisionAttribution[];

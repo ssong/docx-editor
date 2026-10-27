@@ -108,7 +108,8 @@ function visitStory(
           text: '',
           props: [],
           style: block.marker.style,
-          box: { ...first.box, width: 0 },
+          // Span boxes are vertically relative to their line: this one sits at its top.
+          box: { x: first.box.x, y: 0, width: 0, height: first.box.height },
         };
         visitor({
           page,
@@ -118,7 +119,7 @@ function visitStory(
           storyOrigin,
           absoluteBox: Object.freeze({
             x: storyOrigin.x + span.box.x,
-            y: storyOrigin.y + span.box.y,
+            y: storyOrigin.y + (first.box.y + span.box.y),
             width: 0,
             height: span.box.height,
           }),
@@ -151,7 +152,8 @@ function visitStory(
               storyOrigin,
               absoluteBox: Object.freeze({
                 x: storyOrigin.x + span.box.x,
-                y: storyOrigin.y + span.box.y,
+                // A span box is vertically relative to its line.
+                y: storyOrigin.y + (line.box.y + span.box.y),
                 width: span.box.width,
                 height: span.box.height,
               }),

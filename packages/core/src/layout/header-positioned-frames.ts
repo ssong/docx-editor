@@ -12,6 +12,7 @@ import type {
   LayoutBox,
   ParagraphFragmentRecord,
 } from './semantic-records.ts';
+import { spanStoryBox } from './span-box.ts';
 
 const MAX_NODES = 4096;
 const MAX_DEPTH = 24;
@@ -216,7 +217,8 @@ export function meetsOrdinaryContent(
     for (const border of block.borders ?? []) if (overlaps(frame, border.box)) return true;
     if (block.shadingBox && overlaps(frame, block.shadingBox)) return true;
     for (const line of block.lines) {
-      for (const span of line.spans) if (span.text.trim() && overlaps(frame, span.box)) return true;
+      for (const span of line.spans)
+        if (span.text.trim() && overlaps(frame, spanStoryBox(line, span))) return true;
       for (const drawing of line.drawings ?? [])
         if (overlaps(frame, drawing.paintBounds)) return true;
     }
@@ -378,7 +380,8 @@ export function placePositionedHeaderFrames(
       include(block.box);
       for (const border of block.borders ?? []) include(border.box);
       if (block.shadingBox) include(block.shadingBox);
-      for (const line of block.lines) for (const span of line.spans) include(span.box);
+      for (const line of block.lines)
+        for (const span of line.spans) include(spanStoryBox(line, span));
     }
     if (
       ![left, top, right, bottom].every(Number.isFinite) ||

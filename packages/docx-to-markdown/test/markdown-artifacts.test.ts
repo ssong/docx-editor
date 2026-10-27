@@ -29,6 +29,7 @@ function paragraph(id: string, text: string): ParagraphFragmentRecord {
     lines: [
       {
         range: { paragraphId: id, start: 0, end: text.length },
+        box: { x: 0, y: 0, width: 100, height: 10 },
         spans: [
           {
             range: { paragraphId: id, start: 0, end: text.length },

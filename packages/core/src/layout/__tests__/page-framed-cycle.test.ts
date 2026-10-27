@@ -45,8 +45,8 @@ const covered = (layout: SemanticLayout): string[] =>
                 line.spans.some(
                   (span) =>
                     span.text.length > 0 &&
-                    span.box.y < box.y + box.height - 0.5 &&
-                    span.box.y + span.box.height > box.y + 0.5
+                    line.box.y + span.box.y < box.y + box.height - 0.5 &&
+                    line.box.y + span.box.y + span.box.height > box.y + 0.5
                 )
               )
               .map(textOf)

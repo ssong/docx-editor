@@ -57,14 +57,8 @@ export function shiftParagraphFragment(
           },
         }
       : {}),
-    lines: fragment.lines.map((line) => ({
-      ...line,
-      box: { ...line.box, y: line.box.y + dy },
-      spans: line.spans.map((span) => ({
-        ...span,
-        box: { ...span.box, y: span.box.y + dy },
-      })),
-    })),
+    // Span boxes are relative to their line vertically, so the spans stay as they are.
+    lines: fragment.lines.map((line) => ({ ...line, box: { ...line.box, y: line.box.y + dy } })),
   };
 }
 
