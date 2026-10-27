@@ -117,8 +117,8 @@ export function fontFaceEnvironmentOf(doc?: Document | null): EmbeddedFontFaceEn
 
 /**
  * Register admitted faces under engine-minted aliases and return the lookup the painter
- * uses. Resolves after every face has either loaded into the set or failed; per-face
- * failure only lowers `installed`.
+ * uses. Resolves after every face it registers up front has either loaded into the set or
+ * failed; per-face failure only lowers `installed`.
  *
  * Callers MUST pass faces that survived validation — these bytes reach the browser's own
  * font loader.
@@ -129,11 +129,19 @@ export function fontFaceEnvironmentOf(doc?: Document | null): EmbeddedFontFaceEn
  * app-supplied stand-ins paintable WITHOUT registering a face called "Calibri" globally —
  * the shadowing hole this module exists to avoid applies to Word's family names just as
  * much as to a document's own.
+ *
+ * `usedFamilies` names the families the document asks for. Faces those families reach,
+ * directly or through `substitutions`, register before this resolves, so the first paint
+ * already has them. Every other family registers the first time the painter asks for its
+ * alias. A browser keeps its own decoded copy of every registered face, so registering the
+ * whole configuration held all of it for a document that names one family. Omitted, every
+ * face registers up front.
  */
 export async function registerEmbeddedFontFaces(
   sources: readonly FontSource[],
   environment: EmbeddedFontFaceEnvironment = fontFaceEnvironmentOf(),
-  substitutions: readonly FontSourceSubstitution[] = []
+  substitutions: readonly FontSourceSubstitution[] = [],
+  usedFamilies?: readonly string[]
 ): Promise<EmbeddedFontFaceRegistration> {
   const { fontSet, createFontFace } = environment;
   if (!fontSet || !createFontFace || sources.length === 0) return NO_REGISTRATION;
@@ -146,8 +154,30 @@ export async function registerEmbeddedFontFaces(
     if (list) list.push(source);
     else byFamily.set(family, [source]);
   }
+  /** A substituted-from name -> the registered family whose alias it borrows. */
+  const substituted = new Map<string, string>();
+  for (const substitution of substitutions) {
+    const from = familyKey(substitution.from.family);
+    const to = familyKey(substitution.to.family);
+    if (byFamily.has(to) && !substituted.has(from)) substituted.set(from, to);
+  }
+  const used = usedFamilies && new Set(usedFamilies.map(familyKey));
+  const eager = new Set<string>();
+  for (const family of byFamily.keys()) {
+    if (!used || used.has(family)) eager.add(family);
+  }
+  if (used) {
+    for (const [from, to] of substituted) if (used.has(from)) eager.add(to);
+  }
 
-  const aliases = new Map<string, string>();
+  const aliasOf = new Map<string, string>();
+  for (const [family, faces] of byFamily) {
+    aliasOf.set(family, aliasForFamily(faces.map((face) => `${face.hash}:face:${face.faceIndex}`)));
+  }
+  /** Families with at least one face the browser accepted. */
+  const loaded = new Set<string>();
+  /** Families that have registered, or tried to: each is attempted once. */
+  const attempted = new Set<string>();
   const added: { readonly set: FontFaceSetLike; readonly face: FontFaceLike }[] = [];
   /**
    * What each accepted face was made from, so `showIn` can make it again elsewhere. The SOURCE,
@@ -155,6 +185,8 @@ export async function registerEmbeddedFontFaces(
    * face for a window that may never open held every document font once more.
    */
   const accepted: { alias: string; source: FontSource; descriptors: FaceDescriptors }[] = [];
+  /** Other documents' font machinery, from `showIn`; a family registered later reaches them too. */
+  const shownElsewhere: EmbeddedFontFaceEnvironment[] = [];
   const browserBytesOf = (face: FontSource): Uint8Array => {
     const bytes = face.bytes;
     const isCollection =
@@ -173,68 +205,102 @@ export async function registerEmbeddedFontFaces(
       ? materializeCollectionFace(bytes, face.faceIndex)
       : bytes;
   };
+  const descriptorsOf = (face: FontSource): FaceDescriptors => ({
+    weight: String(face.request.weight),
+    style: face.request.style,
+  });
+  /** Add one face to another set before it loads; that set renders it once its bytes parse. */
+  const addUnloaded = (
+    target: EmbeddedFontFaceEnvironment,
+    alias: string,
+    source: FontSource,
+    descriptors: FaceDescriptors
+  ): boolean => {
+    try {
+      const face = target.createFontFace!(alias, browserBytesOf(source), descriptors);
+      target.fontSet!.add(face);
+      added.push({ set: target.fontSet!, face });
+      void face.load().catch(() => {});
+      return true;
+    } catch {
+      // Paint fidelity is best-effort; the face still measures shaped.
+      return false;
+    }
+  };
+
   await Promise.all(
-    [...byFamily].map(async ([family, faces]) => {
-      const alias = aliasForFamily(faces.map((face) => `${face.hash}:face:${face.faceIndex}`));
-      let anyLoaded = false;
+    [...eager].map(async (family) => {
+      attempted.add(family);
+      const alias = aliasOf.get(family)!;
       await Promise.all(
-        faces.map(async (face) => {
+        byFamily.get(family)!.map(async (face) => {
           try {
-            const browserBytes = browserBytesOf(face);
-            const descriptors: FaceDescriptors = {
-              weight: String(face.request.weight),
-              style: face.request.style,
-            };
-            const fontFace = createFontFace(alias, browserBytes, descriptors);
+            const descriptors = descriptorsOf(face);
+            const fontFace = createFontFace(alias, browserBytesOf(face), descriptors);
             await fontFace.load();
             fontSet.add(fontFace);
             added.push({ set: fontSet, face: fontFace });
             accepted.push({ alias, source: face, descriptors });
-            anyLoaded = true;
+            loaded.add(family);
           } catch {
             // Paint fidelity is best-effort; the face still measures shaped.
           }
         })
       );
-      // Only advertise an alias the browser actually accepted: pointing the painter at a
-      // family with no registered face would push text to the generic fallback instead of
-      // the declared family behind it.
-      if (anyLoaded) aliases.set(family, alias);
     })
   );
-  if (added.length === 0) return NO_REGISTRATION;
-
-  // A substituted-from name only borrows an alias that its target actually earned, and
-  // never displaces a face registered under that name directly — a real Calibri beats a
-  // stand-in for Calibri, the same precedence composition already applies to bytes.
-  for (const substitution of substitutions) {
-    const from = familyKey(substitution.from.family);
-    if (aliases.has(from)) continue;
-    const alias = aliases.get(familyKey(substitution.to.family));
-    if (alias !== undefined) aliases.set(from, alias);
-  }
+  if (added.length === 0 && eager.size === byFamily.size) return NO_REGISTRATION;
 
   let disposed = false;
+  /**
+   * Register a family that waited for its first use. Synchronous, because the painter is asking
+   * for the alias right now: the face is added before it loads, and the browser repaints text
+   * under the alias once the bytes parse. Measurement never depends on it, so layout is the same.
+   */
+  const registerOnFirstUse = (family: string): void => {
+    if (attempted.has(family)) return;
+    attempted.add(family);
+    const alias = aliasOf.get(family)!;
+    for (const source of byFamily.get(family)!) {
+      const descriptors = descriptorsOf(source);
+      if (!addUnloaded(environment, alias, source, descriptors)) continue;
+      accepted.push({ alias, source, descriptors });
+      loaded.add(family);
+      for (const target of shownElsewhere) addUnloaded(target, alias, source, descriptors);
+    }
+  };
+  /**
+   * Only advertise an alias the browser accepted: pointing the painter at a family with no
+   * registered face would push text to the generic fallback instead of the declared family
+   * behind it. A substituted-from name only borrows an alias that its target earned, and
+   * never displaces a face registered under that name directly — a real Calibri beats a
+   * stand-in for Calibri, the same precedence composition already applies to bytes.
+   */
+  const aliasFor = (family: string): string | undefined => {
+    if (byFamily.has(family)) {
+      registerOnFirstUse(family);
+      if (loaded.has(family)) return aliasOf.get(family);
+    }
+    const target = substituted.get(family);
+    if (target === undefined) return undefined;
+    registerOnFirstUse(target);
+    return loaded.has(target) ? aliasOf.get(target) : undefined;
+  };
+
   const shownIn = new WeakSet<object>([fontSet]);
   return {
-    installed: added.length,
-    alias: (family) => (disposed ? undefined : aliases.get(familyKey(family))),
+    get installed() {
+      return added.filter((entry) => entry.set === fontSet).length;
+    },
+    alias: (family) => (disposed ? undefined : aliasFor(familyKey(family))),
     showIn(doc) {
       if (disposed) return;
       const target = fontFaceEnvironmentOf(doc);
       if (!target.fontSet || !target.createFontFace || shownIn.has(target.fontSet)) return;
       shownIn.add(target.fontSet);
+      shownElsewhere.push(target);
       for (const { alias, source, descriptors } of accepted) {
-        try {
-          const face = target.createFontFace(alias, browserBytesOf(source), descriptors);
-          // Added before it loads: a set renders a face as soon as its bytes parse, and text
-          // already painted under the alias re-renders then.
-          target.fontSet.add(face);
-          added.push({ set: target.fontSet, face });
-          void face.load().catch(() => {});
-        } catch {
-          // Paint fidelity is best-effort; the face still measures shaped.
-        }
+        addUnloaded(target, alias, source, descriptors);
       }
     },
     dispose() {
