@@ -32,7 +32,7 @@ const editStage = (row) =>
 const lines = [];
 const env = report.environment;
 lines.push(
-  `Commit \`${report.commit}\`${report.dirty ? ' (with local changes to packages/core)' : ''}, ${report.date.slice(0, 10)}. ` +
+  `Commit \`${report.commit}\`${report.dirty ? ' (with local changes to packages/core or packages/docx-to-pdf)' : ''}, ${report.date.slice(0, 10)}. ` +
     `${env.cpu}, ${env.cpus} CPUs, ${env.memoryGb} GB, Node.js ${env.node}` +
     `${env.chromium ? `, Chromium ${env.chromium}` : ''}. Median of ${report.options.runs} runs. Values in MB unless noted.`
 );
@@ -62,6 +62,30 @@ if (report.server) {
     '',
     '*Open* and *Layout* are the live heap above the module baseline after each stage. *Edit growth* is ' +
       `the heap added by ${report.options.serverEdits} single-character edits. *Peak RSS* is the process high-water mark.`
+  );
+}
+
+if (report.pdf) {
+  lines.push(
+    '',
+    '### PDF export (Node.js)',
+    '',
+    '| Document | Pages | Layout ms | Paint ms | Export ms | Peak RSS | KB per page | PDF |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |'
+  );
+  for (const row of report.pdf) {
+    const exported = stageOf(row, 'export');
+    const base = stageOf(row, 'modules loaded');
+    lines.push(
+      `| ${row.document} | ${row.pages} | ${row.layoutMs} | ${row.paintMs} | ${exported.ms} | ` +
+        `${mb(exported.peakRssMb)}${change('pdf', row.document, 'export', 'peakRssMb', exported.peakRssMb)} | ` +
+        `${perPage(exported.peakRssMb - base.rssMb, row.pages)} | \`${row.pdfSha256.slice(0, 12)}\` |`
+    );
+  }
+  lines.push(
+    '',
+    '*Peak RSS* is the process high-water mark of one `exportPdf` call, packaged fonts only. ' +
+      '*KB per page* counts it above the RSS with the modules loaded. *PDF* is the start of the SHA-256 of the output.'
   );
 }
 

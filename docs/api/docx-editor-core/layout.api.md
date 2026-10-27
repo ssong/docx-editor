@@ -1331,6 +1331,7 @@ export function forEachSemanticDrawing(layout: SemanticLayout, visit: (drawing: 
 
 // @public
 export function forEachSemanticSpan(layout: SemanticLayout, visitor: (visit: SemanticSpanVisit) => void, options?: {
+    readonly page?: PageRecord;
     readonly spanlessMarkers?: boolean;
 }): void;
 
