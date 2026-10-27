@@ -143,6 +143,7 @@
     "test:e2e:collab:perf": "playwright test --config e2e/collaboration.performance.config.ts",
     "test:e2e:acceptance": "playwright test --config e2e/editor-acceptance.config.ts",
     "test:e2e:editor": "playwright test --config e2e/editor-smoke.config.ts",
+    "test:screenshots": "node e2e/screenshot-diff/run.mjs",
     "test:watch": "bun test --watch",
     "typecheck": "bun run --filter '*' typecheck",
     "typecheck:root": "bun check -p tsconfig.json",
