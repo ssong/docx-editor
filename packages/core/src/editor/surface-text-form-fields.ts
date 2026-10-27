@@ -24,6 +24,7 @@ import {
   type SemanticSelection,
 } from '@docx-editor.dev/core/layout';
 import { planTextFormSave } from './text-form-save-plan.ts';
+import { partHistoryKey } from '../store/package/part-history-key.ts';
 import { hostWindowOf } from './host-realm.ts';
 import type { SurfaceHostListeners } from './surface-host-listeners.ts';
 
@@ -141,19 +142,22 @@ export function createTextFormFieldInteraction(
       }
     }
   }
-  // Store history restores immutable part identities. Keep input provenance with those
-  // snapshots so undo restores a clean date and redo restores the original input locale.
-  const inputHistory = new WeakMap<OoxmlPart, DirtyFields>();
-  const savedSelections = new WeakMap<OoxmlPart, SemanticSelection>();
+  // Keep input provenance with each part state, so undo restores a clean date and redo
+  // restores the original input locale. History may rebuild a part it restores, so the
+  // state is keyed by `partHistoryKey`, not by the part object.
+  const inputHistory = new WeakMap<object, DirtyFields>();
+  const savedSelections = new WeakMap<object, SemanticSelection>();
   const rememberInput = (part = host.part()): void => {
     inputHistory.set(
-      part,
+      partHistoryKey(part),
       new Map([...dirtyBaseline].filter(([id]) => id.startsWith(`${part.name}#`)))
     );
   };
   const restoreInput = (): SemanticSelection | null => {
-    dirtyBaseline = new Map(parts().flatMap((part) => [...(inputHistory.get(part) ?? [])]));
-    return savedSelections.get(host.part()) ?? null;
+    dirtyBaseline = new Map(
+      parts().flatMap((part) => [...(inputHistory.get(partHistoryKey(part)) ?? [])])
+    );
+    return savedSelections.get(partHistoryKey(host.part())) ?? null;
   };
   const forgetField = (id: string): void => {
     dirtyBaseline.delete(id);
@@ -169,7 +173,7 @@ export function createTextFormFieldInteraction(
     const before = parts();
     parts().forEach(rememberInput);
     const previous = dirtyBaseline;
-    if (plan.ops.length) savedSelections.set(host.part(), host.selection());
+    if (plan.ops.length) savedSelections.set(partHistoryKey(host.part()), host.selection());
     // Session changes notify hosts synchronously. A nested save must see committed values,
     // not reinterpret the output picture using the original input locale a second time.
     dirtyBaseline = new Map();
@@ -183,7 +187,7 @@ export function createTextFormFieldInteraction(
       if (refusal) dirtyBaseline = previous;
       else {
         delete status.dataset.fieldError;
-        if (plan.ops.length) savedSelections.set(host.part(), plan.selection);
+        if (plan.ops.length) savedSelections.set(partHistoryKey(host.part()), plan.selection);
       }
       parts().forEach(rememberInput);
       return refusal;

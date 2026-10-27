@@ -461,6 +461,26 @@ export function carryIndexToHistoryRoot(oldRoot: OoxmlElement, restoredRoot: Oox
   stealPatchedIndex(oldRoot, restoredRoot);
 }
 
+/**
+ * The edit lineage of a root, for history that drops the root and rebuilds it later.
+ *
+ * A root that has none yet gets one now, the state an index build would give it, so the
+ * root rebuilt from history and any later index of this root share it.
+ */
+export function historyRootLineage(root: OoxmlElement): object {
+  let lineage = mintStates.get(root);
+  if (!lineage) {
+    lineage = { frontier: 0 };
+    mintStates.set(root, lineage);
+  }
+  return lineage;
+}
+
+/** Put a root rebuilt from history back in the edit lineage of the root it stands for. */
+export function adoptHistoryRootLineage(root: OoxmlElement, lineage: object): void {
+  mintStates.set(root, lineage as { frontier: number });
+}
+
 function removeIndexedSubtree(index: PartIndex, node: OoxmlNode): void {
   // Only when the entry still names THIS object: a moved node re-indexed under its new
   // parent must survive the removal sweep of its old position.
