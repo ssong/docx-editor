@@ -17,6 +17,8 @@ export {
   type OpenDocumentForExportOptions,
   type OpenDocumentForExportResult,
 } from './export-session.ts';
+// `OpenDocumentForExportOptions.spans` takes it.
+export type { SpanGranularity } from '../layout/run-span-merge.ts';
 export {
   createNodeImageDecodePort,
   type PreservedImageConverter,

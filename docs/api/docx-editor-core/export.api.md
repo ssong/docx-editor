@@ -386,6 +386,8 @@ export interface OpenDocumentForExportOptions {
     readonly revisionAuthorSlots?: Readonly<Record<string, number>>;
     readonly revisionMarkup?: RevisionMarkupOptions;
     readonly signal?: AbortSignal;
+    // @beta
+    readonly spans?: SpanGranularity;
 }
 
 // @public
@@ -459,5 +461,8 @@ export interface SharedExportShaping {
 
 // @public
 export type SharedExportShapingCapabilities = SharedExportShaping & ExportLaidOutTextApi;
+
+// @beta
+export type SpanGranularity = 'word' | 'run';
 
 ```

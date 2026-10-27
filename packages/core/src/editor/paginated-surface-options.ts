@@ -8,6 +8,7 @@ import type { ResolvedRevisionMarkup } from '../contracts/revision-markup.ts';
 
 import type { ReviewDisplayMode } from '../layout/revision-projection.ts';
 import type { FieldResultsMode } from '../store/package/field-result-mode.ts';
+import type { SpanGranularity } from '../layout/run-span-merge.ts';
 import type { RevisionStyles } from '../output/revision-presentation.ts';
 import type { FieldShadingMode } from '../output/semantic-paint.ts';
 import type {
@@ -65,6 +66,8 @@ export interface PaginatedSurfaceOptions {
    * complex field results are not supported. Refused with a {@link collaborationModel}.
    */
   readonly fieldResults?: FieldResultsMode;
+  /** Spans per laid-out line; see `DocxEditorConfig.layoutSpans`. Fixed for the surface. */
+  readonly layoutSpans?: SpanGranularity;
   readonly measurer?: TextMeasurer;
   /** Ambient author for tracked edits. Required before suggesting can write anything. */
   readonly author?: string;

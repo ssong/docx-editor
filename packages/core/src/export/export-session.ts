@@ -26,6 +26,7 @@ import { createDocumentStyleDependencies } from '../layout/document-style-deps.t
 import { createFieldLinkRegistry } from '../layout/field-link-registry.ts';
 import { forEachSemanticDrawing } from '../layout/semantic-record-queries.ts';
 import { TablePaginationError } from '../layout/semantic-table-layout.ts';
+import type { SpanGranularity } from '../layout/run-span-merge.ts';
 import {
   layoutDocumentView,
   type LayoutDocumentViewOptions,
@@ -105,6 +106,12 @@ export interface OpenDocumentForExportOptions {
   readonly resourceTimeoutMs?: number;
   /** Retain incremental state for a live view. Defaults to true for views and false for bytes. */
   readonly reuseAcrossRevisions?: boolean;
+  /**
+   * Spans per line: `word` (the default) or `run`, which joins the words of a run segment into
+   * one span. See `SemanticLayoutOptions.spans`.
+   * @beta
+   */
+  readonly spans?: SpanGranularity;
 }
 
 /**
@@ -639,6 +646,7 @@ export function openDocumentForExport(
         bodyBlockLimit: undefined,
         // Export paints every field as one unit; the painted text is the same in both modes.
         fieldResults: 'atomic',
+        spans: options.spans,
       } satisfies LayoutDocumentViewOptions & Record<keyof LayoutDocumentViewOptions, unknown>);
       if (!layoutHasPendingImages(layout)) {
         const restartedBeforePublish = restartOnRevisionDrift();

@@ -9,6 +9,7 @@ import type { ResolvedListItem } from './list-resolve.ts';
 import type { NumberingIndex } from './numbering-index.ts';
 import type { PageFurniture } from './page-furniture-insets.ts';
 import type { PendingLine } from './paragraph-flow.ts';
+import type { SpanGranularity } from './run-span-merge.ts';
 import type { RevisionAuthorFilter, RevisionDisplayMode } from './revision-projection.ts';
 import type { SectionColumns } from './section-properties.ts';
 import type { SectionPageBorders } from './page-borders.ts';
@@ -163,6 +164,14 @@ export interface SemanticLayoutOptions {
    * mode is folded into every cache key.
    */
   readonly fieldResults?: FieldResultsMode;
+  /**
+   * How many spans a line holds for its text (see `SpanGranularity`). `word` (the default) keeps
+   * one span per word; `run` joins the words of one run segment wherever no justification
+   * stretches the space between them, which takes less memory and paints fewer elements. Text,
+   * line breaks, and glyph positions stay the same. The mode is folded into every cache key.
+   * @beta
+   */
+  readonly spans?: SpanGranularity;
   /** @internal */
   readonly fieldCodeRanges?: import('./field-code-toc.ts').FieldCodeRanges;
   /** @internal Word TOC character-style suppression. */

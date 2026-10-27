@@ -314,7 +314,7 @@ const SPAN_DECORATION_KEYS = Object.keys(SPAN_DECORATIONS) as readonly (keyof St
  * `cjk-line-breaking.test.ts` pin a revised and a linked run so a future defensive copy on
  * that path cannot silently return CJK to one span per ideograph.
  */
-function decorationsMatch(previous: StyleSpanRecord, current: StyleSpanRecord): boolean {
+export function decorationsMatch(previous: StyleSpanRecord, current: StyleSpanRecord): boolean {
   for (const key of SPAN_DECORATION_KEYS) {
     if (previous[key] !== current[key]) return false;
   }

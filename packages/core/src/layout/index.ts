@@ -233,6 +233,7 @@ export {
 } from './export-traversal.ts';
 export { lineSegments, type LineSegment } from './line-segments.ts';
 export { spanStoryBox } from './span-box.ts';
+export type { SpanGranularity } from './run-span-merge.ts';
 export { vectorShapeInkClip } from './vector-shape-ink.ts';
 export {
   groupPictureLayerDrawing,

@@ -42,7 +42,8 @@ Options:
   --filter <text>     only documents whose name contains this text
   --jobs <n>          documents laid out at the same time
   --tolerance <pt>    allowed position difference in points (default: 0, exact)
-  --spans <mode>      exact or merged (default: exact)
+  --spans <mode>      exact or merged (default: exact). merged also lays out this
+                      checkout with the layout option spans: 'run'
   --markdown <file>   also write the report as Markdown
 
 Exit code 0 when the layout matches, 1 when it differs.`);
@@ -94,7 +95,9 @@ const run = join(here, 'run.mjs');
 const baseOut = join(work, 'out-base');
 const headOut = join(work, 'out-head');
 sh(process.execPath, [run, '--root', baseRoot, '--out', baseOut, ...runArgs], repo);
-sh(process.execPath, [run, '--root', repo, '--out', headOut, ...runArgs], repo);
+// Merged spans compare a head that merges against a base that does not.
+const headArgs = values.spans === 'merged' ? ['--layout-spans', 'run'] : [];
+sh(process.execPath, [run, '--root', repo, '--out', headOut, ...runArgs, ...headArgs], repo);
 
 const compareArgs = ['--tolerance', values.tolerance, '--spans', values.spans];
 if (values.markdown) compareArgs.push('--markdown', resolve(values.markdown));
