@@ -10,7 +10,7 @@ import type { SelectionMark } from './tree-store.ts';
 // A history entry is the whole package as it was. Structural sharing makes that cheap for
 // everything an edit did not touch, but not for the element that holds the edited block:
 // typing one character rebuilds the body, and the body's child list is one pointer per
-// top-level block. At 15,000 blocks every entry held 120 KB that no other entry shared.
+// top-level block. At 9,500 blocks (1,270 pages) every entry held about 80 KB of its own.
 //
 // An entry below the top of its stack therefore keeps a WIDE element (a part root, or a
 // child of one, with many children) as a list of chunks. A chunk is a frozen slice of the
