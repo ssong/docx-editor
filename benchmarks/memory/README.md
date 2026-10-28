@@ -53,6 +53,7 @@ If Playwright cannot find its browser, pass a Chromium executable with `--chromi
 | `--compare` |  | An earlier report. The tool prints the change for each stage. |
 | `--no-build` |  | Reuse the benchmark page from the previous run. |
 | `--chromium` |  | A Chromium executable. |
+| `--layout-options` |  | Options for the server export session and the browser editor, as JSON. For example, `'{"compactLayoutBoxes":true}'` measures compact span boxes. |
 
 ## Documents
 

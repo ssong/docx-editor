@@ -55,10 +55,10 @@ window.__memoryBench = {
     fonts = await loadDefaultFonts();
   },
 
-  async open(url, layoutSpans = 'word') {
+  async open(url, options = {}) {
     const bytes = new Uint8Array(await (await fetch(url)).arrayBuffer());
     const t0 = performance.now();
-    editor = createDocxEditor({ document: bytes, layoutSpans, ...(fonts ? { fonts } : {}) });
+    editor = createDocxEditor({ document: bytes, ...options, ...(fonts ? { fonts } : {}) });
     // The editor reports `document.open` once the last page of a sliced open is laid out.
     const laidOut = new Promise((done, fail) => {
       const off = editor.on('diagnostic', (event) => {

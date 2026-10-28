@@ -25,6 +25,7 @@ const { values } = parseArgs({
     tolerance: { type: 'string', default: '0' },
     spans: { type: 'string', default: 'exact' },
     markdown: { type: 'string' },
+    'head-options': { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -45,6 +46,9 @@ Options:
   --spans <mode>      exact or merged (default: exact). merged also lays out this
                       checkout with the layout option spans: 'run'
   --markdown <file>   also write the report as Markdown
+  --head-options <json>
+                      extra export session options for this checkout only, for example
+                      '{"compactLayoutBoxes":true}' to check a layout option against the base
 
 Exit code 0 when the layout matches, 1 when it differs.`);
   process.exit(0);
@@ -95,8 +99,13 @@ const run = join(here, 'run.mjs');
 const baseOut = join(work, 'out-base');
 const headOut = join(work, 'out-head');
 sh(process.execPath, [run, '--root', baseRoot, '--out', baseOut, ...runArgs], repo);
-// Merged spans compare a head that merges against a base that does not.
-const headArgs = values.spans === 'merged' ? ['--layout-spans', 'run'] : [];
+// Merged spans compare a head that joins the words of a run against a base that does not.
+const headOptions = {
+  ...(values['head-options'] ? JSON.parse(values['head-options']) : {}),
+  ...(values.spans === 'merged' ? { spans: 'run' } : {}),
+};
+const headArgs =
+  Object.keys(headOptions).length > 0 ? ['--export-options', JSON.stringify(headOptions)] : [];
 sh(process.execPath, [run, '--root', repo, '--out', headOut, ...runArgs, ...headArgs], repo);
 
 const compareArgs = ['--tolerance', values.tolerance, '--spans', values.spans];

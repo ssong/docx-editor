@@ -9,7 +9,7 @@
 // format never differs between the two sides.
 //
 // Usage: node scripts/layout-fingerprint/probe.mjs --root <checkout> --measurer fixed|shaped
-//        [--layout-spans word|run] (<document.docx> | --synthetic <units>)
+//        (<document.docx> | --synthetic <units>)
 
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -24,9 +24,7 @@ const { values, positionals } = parseArgs({
     root: { type: 'string' },
     measurer: { type: 'string', default: 'fixed' },
     synthetic: { type: 'string' },
-    // The layout option `spans`. An engine that predates it ignores it, so the base of a
-    // comparison lays out one span per word whatever this says.
-    'layout-spans': { type: 'string', default: 'word' },
+    'export-options': { type: 'string' },
   },
 });
 const root = resolve(values.root ?? join(import.meta.dirname, '../..'));
@@ -39,12 +37,14 @@ const bytes = values.synthetic
   ? syntheticDocx(Number(values.synthetic))
   : new Uint8Array(readFileSync(positionals[0]));
 
-const spans = values['layout-spans'];
+// Extra session options, such as a layout option under test. An engine that does not know
+// an option ignores it.
+const extraOptions = values['export-options'] ? JSON.parse(values['export-options']) : {};
 
 async function openSession() {
   if (values.measurer === 'fixed') {
     // The engine's fixed measurer: no fonts, so the result depends on layout code alone.
-    return exporter.openDocumentForExport(bytes, { reuseAcrossRevisions: false, spans });
+    return exporter.openDocumentForExport(bytes, { ...extraOptions, reuseAcrossRevisions: false });
   }
   if (values.measurer !== 'shaped') throw new Error('--measurer takes fixed or shaped');
   // HarfBuzz over the packaged metric-compatible faces, the same origin the PDF exporter
@@ -57,7 +57,7 @@ async function openSession() {
       maxBytes: layoutApi.HARD_MAX_FONT_BYTES,
     }),
   });
-  return exporter.openFontBackedDocumentForExport(bytes, { fonts: packaged, spans });
+  return exporter.openFontBackedDocumentForExport(bytes, { ...extraOptions, fonts: packaged });
 }
 
 const opened = await openSession();

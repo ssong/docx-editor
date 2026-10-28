@@ -9,6 +9,7 @@
 import { expect, test } from 'bun:test';
 import { readOoxmlPart } from '../../store/index.ts';
 import { everyStoryOrder } from '../document-order.ts';
+import { isCompactBox } from '../compact-box.ts';
 import { createParagraphLayoutCache } from '../layout-cache.ts';
 import type { PendingLine } from '../pending-line.ts';
 import type { SpanGranularity } from '../run-span-merge.ts';
@@ -343,4 +344,27 @@ test('one cache never answers one span mode with the other mode’s break', () =
   expect(spanCount(linesFor(wordFirst, 'left'))).toBe(spanCount(linesFor(word, 'left')));
   expect(spanCount(linesFor(runAfter, 'left'))).toBe(spanCount(linesFor(merged, 'left')));
   expect(spanCount(linesFor(wordAgain, 'left'))).toBe(spanCount(linesFor(word, 'left')));
+});
+
+test('with compact boxes, a merged span keeps a compact box at the same place', () => {
+  // Compare against a retained cache too: its spans are frozen, which decides some merges.
+  const exactLayout = layout('run', createParagraphLayoutCache());
+  const compact = layout('run', createParagraphLayoutCache({ compactBoxes: true }));
+  for (const name of ['left', 'center', 'right', 'justified'] as const) {
+    const expected = linesFor(exactLayout, name);
+    const actual = linesFor(compact, name);
+    expect(actual.map((line) => line.spans.map((span) => span.text))).toEqual(
+      expected.map((line) => line.spans.map((span) => span.text))
+    );
+    for (const [lineIndex, line] of actual.entries()) {
+      for (const [spanIndex, span] of line.spans.entries()) {
+        // A spread of a compact box copies no coordinates, so this also proves the merge kept them.
+        expect(isCompactBox(span.box)).toBe(true);
+        const exact = expected[lineIndex]!.spans[spanIndex]!.box;
+        for (const key of ['x', 'y', 'width', 'height'] as const) {
+          expect(Math.abs(span.box[key] - exact[key])).toBeLessThan(0.001);
+        }
+      }
+    }
+  }
 });

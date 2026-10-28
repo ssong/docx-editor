@@ -80,6 +80,13 @@ export interface ParagraphLayoutCache<T> {
    */
   readonly retainAcrossPasses?: boolean;
   /**
+   * Whether the lines this cache stores keep their span boxes on the compact grid.
+   *
+   * Set from {@link ParagraphLayoutCacheOptions.compactBoxes}. Breaking rounds a closed line's
+   * span boxes once, before placement reads them, so every published span box is compact.
+   */
+  readonly compactBoxes?: boolean;
+  /**
    * Derive a break key inside this cache's ownership scope.
    *
    * Export caches use this hook to release construction-only subtree fingerprints together
@@ -564,6 +571,14 @@ export interface ParagraphLayoutCacheOptions {
   readonly maxEntries?: number;
   /** Keep placed breaks for later revisions. Default true; false bounds one-shot exporters. */
   readonly retainAcrossPasses?: boolean;
+  /**
+   * Publish span boxes that store their coordinates as integers of 1/20000 pt.
+   *
+   * A compact box takes about half the memory of a box literal. Its coordinates are rounded
+   * by at most 0.000025 pt and read through getters, so an object spread does not copy them.
+   * Default false.
+   */
+  readonly compactBoxes?: boolean;
 }
 
 // Per table node, the cell keys a pass recorded (`table-cell-break-keys.ts`).
@@ -728,6 +743,7 @@ export function createBudgetedParagraphLayoutCache<T>(
 
   const cache: ParagraphLayoutCache<T> = {
     retainAcrossPasses,
+    ...(options.compactBoxes ? { compactBoxes: true } : {}),
     keyFor(inputs) {
       return paragraphLayoutKeyInScope(inputs, keyMemoScope);
     },

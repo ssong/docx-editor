@@ -25,7 +25,7 @@ const { values } = parseArgs({
     filter: { type: 'string' },
     jobs: { type: 'string', default: String(Math.max(1, Math.min(availableParallelism(), 8))) },
     timeout: { type: 'string', default: '300' },
-    'layout-spans': { type: 'string', default: 'word' },
+    'export-options': { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -43,8 +43,8 @@ Options:
   --filter <text>     only documents whose name contains this text
   --jobs <n>          documents laid out at the same time (default: CPU count, at most 8)
   --timeout <s>       seconds before one document counts as failed (default: 300)
-  --layout-spans <m>  the layout option spans: word or run (default: word). An engine
-                      without the option ignores it.
+  --export-options <json>
+                      extra options for the export session, as JSON
 
 Build the packages of --root first: bun run --filter '@docx-editor.dev/i18n' build &&
 bun run --filter '@docx-editor.dev/core' build && bun run --filter '@docx-editor.dev/fonts' build`);
@@ -95,8 +95,6 @@ for (const measurer of measurers) mkdirSync(join(out, measurer), { recursive: tr
 // Gzipped: the 1,000-page synthetic document alone is about 25 MB of JSON per measurer.
 const fileName = (name) => `${name.replaceAll('/', '__')}.json.gz`;
 const probe = join(here, 'probe.mjs');
-if (!['word', 'run'].includes(values['layout-spans']))
-  throw new Error('--layout-spans takes word or run');
 const timeoutMs = Number(values.timeout) * 1000;
 
 function layOut(document, measurer) {
@@ -111,8 +109,7 @@ function layOut(document, measurer) {
         root,
         '--measurer',
         measurer,
-        '--layout-spans',
-        values['layout-spans'],
+        ...(values['export-options'] ? ['--export-options', values['export-options']] : []),
         ...document.args,
       ],
       { stdio: ['ignore', 'pipe', 'pipe'] }

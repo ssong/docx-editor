@@ -107,6 +107,14 @@ export interface OpenDocumentForExportOptions {
   /** Retain incremental state for a live view. Defaults to true for views and false for bytes. */
   readonly reuseAcrossRevisions?: boolean;
   /**
+   * Publish span boxes that store their coordinates as small integers, to save memory.
+   *
+   * Coordinates are rounded to 1/20000 pt. A compact box reads like any `LayoutBox`, but an
+   * object spread (`{ ...span.box }`) copies none of its coordinates: read the fields instead.
+   * Default false. Experimental: the default may change.
+   */
+  readonly compactLayoutBoxes?: boolean;
+  /**
    * Spans per line: `word` (the default) or `run`, which joins the words of a run segment into
    * one span. See `SemanticLayoutOptions.spans`.
    * @beta
@@ -362,6 +370,7 @@ export function openDocumentForExport(
   // inside the pass, so release entries after placement instead of retaining them across revisions.
   const initialParagraphCache = createParagraphLayoutCache<never>({
     retainAcrossPasses: reuseAcrossRevisions,
+    ...(options.compactLayoutBoxes ? { compactBoxes: true } : {}),
   });
   let resourceEpoch = 0;
   const waiters = new Set<() => void>();

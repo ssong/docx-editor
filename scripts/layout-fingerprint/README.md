@@ -66,11 +66,18 @@ The synthetic documents come from `benchmarks/memory/fixtures.mjs`, at 10, 100, 
 | `--work <dir>` | system temp directory | Where the base worktree and the two outputs go. |
 | `--build-head` | off | Build the packages of your checkout first. |
 | `--markdown <file>` |  | Also write the report as Markdown. |
+| `--head-options <json>` |  | Extra export session options for your checkout only. Use it to check a layout option against the base, for example `'{"compactLayoutBoxes":true}'`. |
 
 For example, a change that rounds published coordinates to 1/100 pt:
 
 ```bash
 bun run layout:check -- --tolerance 0.01
+```
+
+The compact span boxes option, which rounds span coordinates to 1/20000 pt:
+
+```bash
+bun run layout:check -- --tolerance 0.01 --head-options '{"compactLayoutBoxes":true}'
 ```
 
 A change that joins the spans of a run segment:

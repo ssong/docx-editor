@@ -1,0 +1,13 @@
+{
+  "impact": "no-impact",
+  "fields": [],
+  "before": "A laid-out line held one text span per word.",
+  "after": "With the beta layout option spans: 'run' (DocxEditorConfig.layoutSpans), the words of one run segment that no justification stretches share one span. The default, 'word', is unchanged.",
+  "reason": "The option changes only the local layout records that one editor instance paints. The document model, operations, node identities, snapshots, and awareness payloads are the same in both modes, and the option is not shared between peers, so two peers with different settings still edit the same document.",
+  "tests": [
+    "packages/core/src/layout/__tests__/run-span-merge.test.ts",
+    "packages/core/src/output/__tests__/run-span-paint.test.ts"
+  ],
+  "changeset": "run-segment-spans",
+  "migration": null
+}

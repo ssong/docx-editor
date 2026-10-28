@@ -10,6 +10,7 @@ import type { PendingLine } from './pending-line.ts';
 import { applyLineSpacing, type ParagraphLineSpacing } from './paragraph-style.ts';
 import { displayText, type ResolvedRunStyle } from './run-style.ts';
 import type { TextMeasurer } from './semantic-records.ts';
+import { withBox } from './compact-box.ts';
 
 /** Whether an exclusion band has reached this line's logical text range. */
 export function exclusionZoneAppliesToLine(
@@ -73,7 +74,7 @@ export function relocateLineForExclusionGrowth(
   const shift = Math.max(0, passage.start - first);
   for (let index = 0; index < line.spans.length; index++) {
     const span = line.spans[index]!;
-    line.spans[index] = { ...span, box: { ...span.box, x: span.box.x + shift } };
+    line.spans[index] = { ...span, box: withBox(span.box, { x: span.box.x + shift }) };
   }
   for (let index = 0; index < line.drawings.length; index++)
     line.drawings[index] = shiftInlineDrawingRecord(line.drawings[index]!, shift, 0);

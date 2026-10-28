@@ -20,6 +20,7 @@ const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
     edits: { type: 'string', default: '200' },
+    'layout-options': { type: 'string', default: '{}' },
     'layout-spans': { type: 'string', default: 'word' },
   },
 });
@@ -80,7 +81,10 @@ let opened = await stage('open', () => {
 let session = null;
 let pages = 0;
 await stage('layout', async () => {
-  const result = exporter.openDocumentForExport(opened, { spans: values['layout-spans'] });
+  const result = exporter.openDocumentForExport(opened, {
+    ...JSON.parse(values['layout-options']),
+    spans: values['layout-spans'],
+  });
   if (!result.ok) throw new Error(`export open failed: ${result.reason}`);
   session = result.session;
   const layout = await session.layout();

@@ -1473,6 +1473,7 @@ export interface DocumentSearchState {
 export interface DocxEditorConfig {
     // (undocumented)
     author?: string;
+    compactLayoutBoxes?: boolean;
     container?: HTMLElement;
     contentLockPolicy?: ContentLockPolicy;
     document?: DocumentSource;
@@ -2708,6 +2709,7 @@ export interface PaginatedSurfaceOptions {
     readonly author?: string;
     readonly bookmarkMarks?: BookmarkMarkOptionsSource;
     readonly collaborationModel?: CollaborationModuleContribution;
+    readonly compactLayoutBoxes?: boolean;
     readonly contentLockPolicy?: ContentLockPolicy;
     readonly defaultFontFamily?: string;
     readonly drawingStrings?: DrawingPaintStrings;
