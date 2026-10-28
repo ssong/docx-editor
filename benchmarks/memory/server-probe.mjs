@@ -82,9 +82,9 @@ let session = null;
 let pages = 0;
 await stage('layout', async () => {
   const result = exporter.openDocumentForExport(opened, {
-    ...JSON.parse(values['layout-options']),
     reuseAcrossRevisions: false,
     spans: values['layout-spans'],
+    ...JSON.parse(values['layout-options']),
   });
   if (!result.ok) throw new Error(`export open failed: ${result.reason}`);
   session = result.session;
