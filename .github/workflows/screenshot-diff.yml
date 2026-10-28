@@ -1,0 +1,89 @@
+name: Screenshot diff
+
+# Renders the first pages of a fixture set (e2e/screenshot-diff/fixtures.mjs) with the PR's
+# engine and with the merge-base engine, and fails on any changed pixel. The harness page and
+# the fixtures come from the PR on both sides; only the built packages (i18n, core, fonts)
+# differ. Both sides run in the same Chromium on the same runner, so anti-aliasing matches
+# and the comparison can be exact. See e2e/screenshot-diff/README.md.
+#
+# On failure, the `screenshot-diff` artifact holds the Playwright report with the expected,
+# actual and diff image of each changed page.
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'openspec/**'
+      - '.changeset/**'
+      - '**/*.md'
+      - '**/*.mdx'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: screenshot-diff-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  screenshot-diff:
+    if: github.actor != 'dependabot[bot]'
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # Full history so the merge-base commit is reachable for the worktree.
+          fetch-depth: 0
+          # The steps run PR-branch code; keep the token out of .git/config.
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: bash scripts/install-ci-chromium.sh
+
+      - name: Build PR packages
+        run: |
+          bun run --filter '@docx-editor.dev/i18n' build
+          bun run --filter '@docx-editor.dev/core' build
+          bun run --filter '@docx-editor.dev/fonts' build
+
+      - name: Prepare and build the base worktree
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          # HEAD is the PR merge ref, so this is the main tip the merge ref was built against:
+          # the diff shows exactly what merging this PR changes.
+          BASE=$(git merge-base HEAD "origin/$BASE_REF")
+          echo "base commit: $BASE"
+          git worktree add "$RUNNER_TEMP/base" "$BASE"
+          cd "$RUNNER_TEMP/base"
+          bun install --frozen-lockfile
+          bun run --filter '@docx-editor.dev/i18n' build
+          bun run --filter '@docx-editor.dev/core' build
+          bun run --filter '@docx-editor.dev/fonts' build
+
+      - name: Compare PR pages with base pages
+        run: node e2e/screenshot-diff/run.mjs --base-root "$RUNNER_TEMP/base" --skip-build --out screenshot-diff
+
+      - name: Upload the report and images
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshot-diff
+          path: screenshot-diff/
+          retention-days: 14
