@@ -1,0 +1,15 @@
+{
+  "impact": "no-impact",
+  "fields": [],
+  "before": "Every local undo entry in TreeDocumentStore held the whole package as it was, including its own copy of the body's child list.",
+  "after": "An entry below the top of its stack keeps wide elements as chunks shared with neighbouring entries. Undo and redo rebuild the same content: equal package, part and root objects, and the same block objects.",
+  "reason": "Local undo history is not shared state. The operation encoding, node ids, snapshots, and awareness payloads do not change, and the id allocator keeps its lineage across a rebuilt root, so ids stay monotone. Remote edits still apply through the same transactions.",
+  "tests": [
+    "packages/core/src/store/__tests__/history-snapshot.test.ts",
+    "packages/core/src/store/__tests__/ooxml-edit-index.test.ts",
+    "packages/pro/src/collaboration/__tests__/document-typing-history.test.ts",
+    "packages/pro/src/collaboration/__tests__/document-undo-groups.test.ts"
+  ],
+  "changeset": "compact-undo-history",
+  "migration": null
+}
