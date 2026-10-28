@@ -1517,7 +1517,6 @@ export interface FontFailedDiagnostic extends DiagnosticBase {
 export interface FontSource {
     // (undocumented)
     readonly availability?: 'available' | 'forbidden';
-    // (undocumented)
     readonly bytes: Uint8Array;
     // (undocumented)
     readonly faceIndex: number;
