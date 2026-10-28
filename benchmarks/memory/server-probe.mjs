@@ -76,7 +76,7 @@ let opened = await stage('open', () => {
 let session = null;
 let pages = 0;
 await stage('layout', async () => {
-  const result = exporter.openDocumentForExport(opened);
+  const result = exporter.openDocumentForExport(opened, { reuseAcrossRevisions: false });
   if (!result.ok) throw new Error(`export open failed: ${result.reason}`);
   session = result.session;
   const layout = await session.layout();

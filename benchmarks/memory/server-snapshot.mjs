@@ -33,7 +33,7 @@ let view = (() => {
   return opened.view;
 })();
 await snapshot('1-open');
-const result = exporter.openDocumentForExport(view);
+const result = exporter.openDocumentForExport(view, { reuseAcrossRevisions: false });
 if (!result.ok) throw new Error(`export open failed: ${result.reason}`);
 let session = result.session;
 let layout = await session.layout();
