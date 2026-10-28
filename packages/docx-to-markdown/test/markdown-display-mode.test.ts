@@ -21,6 +21,7 @@ test('uses all-markup consistently when a raw Core layout omits displayMode', ()
             lines: [
               {
                 range: { paragraphId: 'deleted', start: 0, end: 8 },
+                box: { x: 0, y: 0, width: 100, height: 10 },
                 spans: [
                   {
                     range: { paragraphId: 'deleted', start: 0, end: 8 },

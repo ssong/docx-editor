@@ -19,6 +19,7 @@ function paragraph(text: string, start = 0, fragmentIndex = 0): ParagraphFragmen
     lines: [
       {
         range: { paragraphId: 'p', start, end: start + text.length },
+        box: { x: 0, y: 0, width: 100, height: 10 },
         spans: [
           {
             range: { paragraphId: 'p', start, end: start + text.length },

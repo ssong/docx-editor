@@ -202,6 +202,12 @@ export interface StyleSpanRecord {
    * with `styleForFontSlot(span.style, span.fontSlot)`.
    */
   readonly fontSlot?: FontSlot;
+  /**
+   * The span's advance box. `x` is in its story's coordinates, like the line's box. `y` is
+   * relative to the top of the line that holds the span, and is zero for ordinary text, so a
+   * line shares its spans with the paragraph cache and moves without copying them. Use
+   * `spanStoryBox(line, span)` for the box in story coordinates.
+   */
   readonly box: LayoutBox;
   /** Authored trailing spaces that layout may clip at the line's right edge. */
   readonly lineEndWhitespace?: true;

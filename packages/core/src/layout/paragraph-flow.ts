@@ -132,6 +132,7 @@ import {
 // The pending-line record and its budget/freeze helpers live in pending-line.ts;
 // re-exported so every existing import through this module stays stable.
 import {
+  cacheBrokenLines,
   coalesceIdeographicSpans,
   frozenLine,
   growLineMetrics,
@@ -1693,7 +1694,5 @@ export function breakParagraph(
       : null;
   if (!settled) claimTrailingChangeSites(lines);
   const result = settled ?? lines;
-  if (cacheKey !== null && cache)
-    cache.set(cacheKey, cache.retainAcrossPasses === false ? result : result.map(frozenLine));
-  return result;
+  return cacheKey !== null && cache ? cacheBrokenLines(cache, cacheKey, result) : result;
 }

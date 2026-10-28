@@ -61,7 +61,10 @@ function lineOf(
   });
 }
 
-/** Every span copied, then aligned: the placement before spans shared their range. */
+/**
+ * Every span copied, then aligned: the placement before spans shared their range. Span boxes
+ * are vertically relative to the line, so placement moves only x.
+ */
 function copiedThenAligned(
   line: PendingLine,
   paragraphId: string,
@@ -74,7 +77,7 @@ function copiedThenAligned(
   const placed = line.spans.map((span) => ({
     ...span,
     range: { ...span.range, paragraphId },
-    box: { ...span.box, x: span.box.x + penX, y: 7.3 },
+    box: { ...span.box, x: span.box.x + penX },
   }));
   const spans = alignSpans(
     placed,
@@ -141,7 +144,7 @@ describe('alignCellLine', () => {
           };
           for (const width of [41.7, 96.35, 300.1]) {
             const line = lineOf('p1', texts, options);
-            const actual = alignCellLine(line, 'p1', 3.3, 7.3, [], 3.3 + 2.15, width, isLastLine, {
+            const actual = alignCellLine(line, 'p1', 3.3, [], 3.3 + 2.15, width, isLastLine, {
               ...shared,
             });
             expectSameBits(
@@ -161,10 +164,10 @@ describe('alignCellLine', () => {
       rtl: false,
       inTableCell: true,
     };
-    const own = alignCellLine(line, 'p1', 0, 0, [], 0, 100, true, shared).spans;
+    const own = alignCellLine(line, 'p1', 0, [], 0, 100, true, shared).spans;
     expect(own.map((span) => span.range)).toEqual(line.spans.map((span) => span.range));
     own.forEach((span, index) => expect(span.range).toBe(line.spans[index]!.range));
-    const other = alignCellLine(line, 'p2', 0, 0, [], 0, 100, true, shared).spans;
+    const other = alignCellLine(line, 'p2', 0, [], 0, 100, true, shared).spans;
     expect(other.map((span) => span.range.paragraphId)).toEqual(['p2', 'p2']);
     other.forEach((span, index) => expect(span.range).not.toBe(line.spans[index]!.range));
     expect(line.spans.map((span) => span.range.paragraphId)).toEqual(['p1', 'p1']);

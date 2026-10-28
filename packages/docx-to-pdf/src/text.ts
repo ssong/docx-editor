@@ -765,7 +765,8 @@ export class TextWriter {
       line.baseline -
       faceBaseline -
       baselineShiftPtOf(styleForFontSlot(span.style, span.fontSlot));
-    return { ...absoluteBox, y: absoluteBox.y + (top - span.box.y) };
+    // A span box is vertically relative to its line.
+    return { ...absoluteBox, y: absoluteBox.y + (top - (line.box.y + span.box.y)) };
   }
   private readonly outlineForms = new Map<
     EmbeddedFace,

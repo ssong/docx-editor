@@ -5,7 +5,7 @@ export function paragraphContentBounds(fragment: ParagraphFragmentRecord): Layou
   if (fragment.clipToBox) return fragment.box;
   let left = fragment.box.x;
   let right = left + fragment.box.width;
-  const include = (box: LayoutBox): void => {
+  const include = (box: Pick<LayoutBox, 'x' | 'width'>): void => {
     left = Math.min(left, box.x);
     right = Math.max(right, box.x + box.width);
   };
