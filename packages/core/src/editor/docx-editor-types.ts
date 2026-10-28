@@ -4,6 +4,7 @@ import type {
   RevisionMarkupChromeHandlers,
 } from '../contracts/revision-markup.ts';
 import type { FieldResultsMode } from '../store/package/field-result-mode.ts';
+import type { SpanGranularity } from '../layout/run-span-merge.ts';
 import type { ReviewPaneOptions } from '../contracts/review-pane.ts';
 import type { ReviewDisplayMode } from '../layout/revision-projection.ts';
 import type { FontShapingOptions } from '../layout/font-shaping-policy.ts';
@@ -172,6 +173,22 @@ export interface DocxEditorConfig {
    * does. Fixed for the instance.
    */
   lockedControlNavigation?: LockedControlNavigation;
+  /**
+   * How many spans a laid-out line holds for its text. `'word'` (the default) paints one
+   * element per word. `'run'` joins the words of one run segment wherever no justification
+   * stretches the space between them, which takes less memory and paints fewer elements. Text,
+   * line breaks, and glyph positions stay the same. Fixed for the instance.
+   * @beta
+   */
+  layoutSpans?: SpanGranularity;
+  /**
+   * Publish span boxes that store their coordinates as small integers, to save memory.
+   *
+   * Coordinates are rounded to 1/20000 pt. A compact box reads like any `LayoutBox`, but an
+   * object spread (`{ ...span.box }`) copies none of its coordinates: read the fields instead.
+   * Default false. Fixed for the instance. Experimental: the default may change.
+   */
+  compactLayoutBoxes?: boolean;
   /** Override raster decode for insert/replace image commands; defaults to browser/headless. */
   imageDecodePort?: import('../store/package/image-resources.ts').ImageDecodePort;
   /**

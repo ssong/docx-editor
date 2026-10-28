@@ -1630,6 +1630,7 @@ export interface DocxDocumentJSON {
 export interface DocxEditorConfig {
     // (undocumented)
     author?: string;
+    compactLayoutBoxes?: boolean;
     container?: HTMLElement;
     contentLockPolicy?: ContentLockPolicy;
     document?: DocumentSource;
@@ -1637,6 +1638,8 @@ export interface DocxEditorConfig {
     fonts?: FontConfiguration | FontConfigurationFragment | FontResolver;
     fontShaping?: FontShapingOptions;
     imageDecodePort?: ImageDecodePort;
+    // @beta
+    layoutSpans?: SpanGranularity;
     locale?: string;
     lockedControlNavigation?: LockedControlNavigation;
     mode?: 'edit' | 'view' | 'suggesting';
@@ -2702,7 +2705,6 @@ export interface FontShapingOptions {
 export interface FontSource {
     // (undocumented)
     readonly availability?: 'available' | 'forbidden';
-    // (undocumented)
     readonly bytes: Uint8Array;
     // (undocumented)
     readonly faceIndex: number;
@@ -4063,6 +4065,9 @@ export type SetReviewChangesAuthorOptions = ReviewChangesAttribution & ({
     keys?: never;
     scope?: 'visible' | 'document';
 });
+
+// @beta
+export type SpanGranularity = 'word' | 'run';
 
 // @public
 export interface StyleDefinition {

@@ -223,7 +223,8 @@ test('signed text-anchor y translates all geometry with no baseline compensation
       f = first(s);
     expect(f.box.y).toBe(y / 20);
     expect(f.lines[0]!.box.y).toBeCloseTo(a.lines[0]!.box.y + y / 20, 10);
-    expect(ink(s).box.y).toBeCloseTo(a.lines[0]!.box.y + y / 20, 10);
+    // A span box is vertically relative to its line.
+    expect(f.lines[0]!.box.y + ink(s).box.y).toBeCloseTo(a.lines[0]!.box.y + y / 20, 10);
     expect(f.lines[0]!.baseline).toBe(a.lines[0]!.baseline);
     expect(s.flowHeight).toBe(a.box.height);
   }

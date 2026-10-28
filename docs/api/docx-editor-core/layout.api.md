@@ -1331,6 +1331,7 @@ export function forEachSemanticDrawing(layout: SemanticLayout, visit: (drawing: 
 
 // @public
 export function forEachSemanticSpan(layout: SemanticLayout, visitor: (visit: SemanticSpanVisit) => void, options?: {
+    readonly page?: PageRecord;
     readonly spanlessMarkers?: boolean;
 }): void;
 
@@ -2770,6 +2771,7 @@ export interface ParagraphKeyInputs {
 export interface ParagraphLayoutCache<T> {
     // (undocumented)
     clear(): void;
+    readonly compactBoxes?: boolean;
     // (undocumented)
     get(key: ParagraphLayoutKey): T | undefined;
     keyFor?(inputs: ParagraphKeyInputs): ParagraphLayoutKey;
@@ -2785,6 +2787,7 @@ export interface ParagraphLayoutCache<T> {
 
 // @public
 export interface ParagraphLayoutCacheOptions {
+    readonly compactBoxes?: boolean;
     readonly maxEntries?: number;
     readonly retainAcrossPasses?: boolean;
 }
@@ -3824,6 +3827,8 @@ export interface SemanticLayoutOptions {
     readonly session?: LayoutSession;
     // @internal
     readonly showFieldCodes?: boolean;
+    // @beta
+    readonly spans?: SpanGranularity;
     readonly styleCascade?: StyleCascadeTable;
     readonly tocFieldChromeParagraphIds?: ReadonlySet<string>;
     // @internal
@@ -4366,6 +4371,9 @@ export interface SourceRange {
     readonly start: number;
 }
 
+// @beta
+export type SpanGranularity = 'word' | 'run';
+
 // @public
 export interface SpanLinkRecord {
     readonly anchor?: string;
@@ -4386,6 +4394,13 @@ export function spansInCells(layout: SemanticLayout, cellIds: readonly string[])
 // @public
 export function spansInSelection(layout: SemanticLayout, selection: SemanticSelection,
 order: readonly string[]): StyleSpanRecord[];
+
+// @public
+export function spanStoryBox(line: {
+    readonly box: Pick<LayoutBox, 'y'>;
+}, span: {
+    readonly box: LayoutBox;
+}): LayoutBox;
 
 // @public
 export function storyBlocks(part: OoxmlPart, displayMode?: RevisionDisplayMode, authorFilter?: RevisionAuthorFilter, styles?: StyleCascadeTable, numberingIndex?: NumberingIndex): OoxmlElement[];
@@ -4494,7 +4509,6 @@ export function styleForFontSlot(style: ResolvedRunStyle, slot: FontSlot | undef
 // @public
 export interface StyleSpanRecord {
     readonly borderBaselinePt?: number;
-    // (undocumented)
     readonly box: LayoutBox;
     readonly caretEdges?: readonly number[];
     readonly changeSites?: readonly RevisionAttribution[];

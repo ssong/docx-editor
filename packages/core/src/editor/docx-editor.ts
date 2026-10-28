@@ -1179,11 +1179,13 @@ export function createDocxEditor(config: DocxEditorConfig): DocxEditorInstance {
       // name, so a document laid out on Carlito metrics would be drawn in something else
       // — correct pagination, wrong glyphs. Aliasing (rather than registering the family
       // name itself) is what keeps that safe; see `embedded-font-faces.ts`.
+      // Families the document names register now; the rest wait until a run first paints in one.
       const admitted = admittedFontSources(fonts.sources, shaping.fonts);
       const registration = await registerEmbeddedFontFaces(
         admitted,
         fontFaceEnvironmentOf(container?.ownerDocument),
-        fonts.substitutions ?? []
+        fonts.substitutions ?? [],
+        [documentRequest.defaultFamily, ...documentRequest.families]
       );
       if (!current()) {
         registration.dispose();

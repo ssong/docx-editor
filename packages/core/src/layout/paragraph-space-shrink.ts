@@ -10,6 +10,7 @@ import type { StyleSpanRecord, TextMeasurer } from './semantic-records.ts';
 import type { FieldAwarePiece } from './field-pieces.ts';
 import { isSpaceShrinkWordPiece } from './space-shrink-piece.ts';
 import { withoutTrailingZeroWidthSpaces } from './trailing-spaces.ts';
+import { withBox } from './compact-box.ts';
 
 // No-break spaces join their neighbours into one word. They have width, never break the
 // line, and never hang, so the word-shape tests read them as word characters.
@@ -263,7 +264,7 @@ export function shrinkJustifiedSpans(
       shift || amount
         ? {
             ...span,
-            box: { ...span.box, x: span.box.x - shift, width: span.box.width - amount },
+            box: withBox(span.box, { x: span.box.x - shift, width: span.box.width - amount }),
             ...(amount
               ? {
                   style: {

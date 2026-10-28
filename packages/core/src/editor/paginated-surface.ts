@@ -421,7 +421,9 @@ export function mountPaginatedSurface(
       });
   let measurer = options.measurer ?? defaults!.measurer;
   // Incremental layout machinery — without these every keystroke re-lays out the document.
-  const layoutCache = createParagraphLayoutCache<never>();
+  const layoutCache = createParagraphLayoutCache<never>({
+    compactBoxes: options.compactLayoutBoxes,
+  });
   let layoutSession = createLayoutSession();
   function producerIdentity(): string {
     if (options.measurer) return options.producer ?? 'host-measurer';
@@ -1461,6 +1463,7 @@ export function mountPaginatedSurface(
       displayMode: revisionDisplayMode(),
       showFieldCodes: context && !context.live ? false : showFieldCodes,
       fieldResults: fieldScope.mode,
+      spans: options.layoutSpans,
       revisionAuthorFilter: activeAuthorFilter,
       bodyBlockLimit,
     } satisfies LayoutDocumentViewOptions & Record<keyof LayoutDocumentViewOptions, unknown>);

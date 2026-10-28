@@ -1473,6 +1473,7 @@ export interface DocumentSearchState {
 export interface DocxEditorConfig {
     // (undocumented)
     author?: string;
+    compactLayoutBoxes?: boolean;
     container?: HTMLElement;
     contentLockPolicy?: ContentLockPolicy;
     document?: DocumentSource;
@@ -1480,6 +1481,8 @@ export interface DocxEditorConfig {
     fonts?: FontConfiguration | FontConfigurationFragment | FontResolver;
     fontShaping?: FontShapingOptions;
     imageDecodePort?: ImageDecodePort;
+    // @beta
+    layoutSpans?: SpanGranularity;
     locale?: string;
     lockedControlNavigation?: LockedControlNavigation;
     mode?: 'edit' | 'view' | 'suggesting';
@@ -2706,6 +2709,7 @@ export interface PaginatedSurfaceOptions {
     readonly author?: string;
     readonly bookmarkMarks?: BookmarkMarkOptionsSource;
     readonly collaborationModel?: CollaborationModuleContribution;
+    readonly compactLayoutBoxes?: boolean;
     readonly contentLockPolicy?: ContentLockPolicy;
     readonly defaultFontFamily?: string;
     readonly drawingStrings?: DrawingPaintStrings;
@@ -2715,6 +2719,7 @@ export interface PaginatedSurfaceOptions {
     readonly fontAlias?: (family: string) => string | undefined;
     readonly hiddenRevisionAuthors?: readonly string[];
     readonly imageDecodePort?: ImageDecodePort;
+    readonly layoutSpans?: SpanGranularity;
     readonly locale?: string;
     readonly lockedControlNavigation?: LockedControlNavigation;
     // (undocumented)
@@ -3727,6 +3732,9 @@ export function sniffImageMime(bytes: Uint8Array): RenderableImageMime | Preserv
 
 // @public
 export function sourceCropFromCropPercent(crop: ImageCropPercent): SourceCrop;
+
+// @beta
+export type SpanGranularity = 'word' | 'run';
 
 // @public
 export type SpecialIndent = 'none' | 'firstLine' | 'hanging';

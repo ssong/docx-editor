@@ -343,6 +343,94 @@ jobs:
           COLLABORATION_RESULT: ${{ needs.collaboration.result }}
         run: test "$RESULT" = success && test "$COLLABORATION_RESULT" = success
 
+  # Lays out every fixture with the merge base and with the PR, and fails when any line or
+  # span moved. See scripts/layout-fingerprint/README.md. A PR that changes layout on
+  # purpose carries the `layout-change-expected` label; the report still shows what moved.
+  layout-equivalence:
+    name: layout equivalence
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: read # read the allow-label live
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # Full history so the merge base is reachable for the worktree.
+          fetch-depth: 0
+          # The check runs PR-branch code; keep the token out of .git/config.
+          persist-credentials: false
+      - name: Find the base commit
+        id: base
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          # HEAD is the PR merge ref, so this is the target-branch tip it was built against.
+          BASE=$(git merge-base HEAD "origin/$BASE_REF")
+          echo "sha=$BASE" >> "$GITHUB_OUTPUT"
+          if git diff --quiet "$BASE" HEAD -- packages/ e2e/fixtures/ scripts/layout-fingerprint/ \
+            benchmarks/memory/fixtures.mjs package.json bun.lock; then
+            echo "No engine, fixture, or check change; layout cannot differ."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Setup Node.js
+        if: steps.base.outputs.run == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Setup Bun
+        if: steps.base.outputs.run == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        if: steps.base.outputs.run == 'true'
+        run: bun install --frozen-lockfile
+      - name: Compare layout with the base commit
+        id: check
+        if: steps.base.outputs.run == 'true'
+        env:
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+          NODE_OPTIONS: '--max-old-space-size=2048'
+        run: |
+          set +e
+          node scripts/layout-fingerprint/check.mjs --base "$BASE_SHA" --build-head \
+            --work "$RUNNER_TEMP/layout" --markdown layout-report.md
+          status=$?
+          set -e
+          if [ -f layout-report.md ]; then cat layout-report.md >> "$GITHUB_STEP_SUMMARY"; fi
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          # 1 is "layout differs", decided in the next step. Anything else is a failure.
+          if [ "$status" != 0 ] && [ "$status" != 1 ]; then exit "$status"; fi
+      - name: Save fingerprints
+        if: steps.check.outputs.status == '1'
+        uses: actions/upload-artifact@v7
+        with:
+          name: layout-fingerprints
+          path: |
+            ${{ runner.temp }}/layout/out-base/
+            ${{ runner.temp }}/layout/out-head/
+          retention-days: 7
+      # The label is read LIVE from the API, not from the event payload: a re-run reuses the
+      # frozen payload, so a label added after the failure would never be seen.
+      - name: Require the label for a layout change (gate)
+        if: steps.check.outputs.status == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels" --jq '.[].name' \
+            | grep -qx 'layout-change-expected'; then
+            echo "Layout differs, and the PR has the layout-change-expected label."
+          else
+            echo "::error::Layout differs from the base commit. See the job summary. If the change is intended, add the layout-change-expected label and re-run this job."
+            exit 1
+          fi
+
   package-size:
     if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
     runs-on: blacksmith-2vcpu-ubuntu-2404

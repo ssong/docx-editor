@@ -1,6 +1,7 @@
 import { expect, spyOn, test } from 'bun:test';
 import { EditorFontError, type FontConfiguration } from '@docx-editor.dev/core/contracts/editor';
 import {
+  createShapingEnvironment,
   FontResolutionError,
   HarfBuzzShapingError,
   layoutFontConfigurationFingerprint,
@@ -211,7 +212,7 @@ test('forbidden faces are neither copied nor hashed and do not block valid sibli
   expect(
     shaping.fonts.resolve({ family: 'Valid', weight: 400, style: 'normal' })
   ).not.toBeInstanceOf(FontResolutionError);
-  expect(counters).toEqual({ copies: 1, hashes: 1, admissions: 1 });
+  expect(counters).toEqual({ copies: 0, hashes: 1, admissions: 1 });
   shaping.shaper.dispose();
 });
 
@@ -306,7 +307,11 @@ test('two faces of one collection fingerprint apart by faceIndex', async () => {
 });
 
 test('samples and owns font bytes before asynchronous initialization yields', async () => {
-  const bytes = new Uint8Array(await Bun.file(fontUrl).arrayBuffer());
+  const file = new Uint8Array(await Bun.file(fontUrl).arrayBuffer());
+  // A view into a larger buffer is copied at handoff, so a later write cannot reach it.
+  const backing = new Uint8Array(file.byteLength + 8);
+  backing.set(file, 4);
+  const bytes = backing.subarray(4, 4 + file.byteLength);
   const hash = sha256FontBytes(bytes);
   const request = Object.freeze({ family: 'DejaVu Sans', weight: 400, style: 'normal' } as const);
   const pending = createLayoutShaping({
@@ -322,6 +327,41 @@ test('samples and owns font bytes before asynchronous initialization yields', as
 
   expect(resolved).not.toBeInstanceOf(Error);
   if (!(resolved instanceof Error)) expect(sha256FontBytes(resolved.bytes)).toBe(hash);
+  shaping.shaper.dispose();
+});
+
+test('refuses an adopted face whose buffer changes after handoff', async () => {
+  const bytes = new Uint8Array(await Bun.file(fontUrl).arrayBuffer());
+  const hash = sha256FontBytes(bytes);
+  const request = Object.freeze({ family: 'DejaVu Sans', weight: 400, style: 'normal' } as const);
+  const pending = createLayoutShaping({
+    epoch: 4,
+    maxFontBytes: 2_000_000,
+    sources: [{ request, id: 'adopted-dejavu', bytes, hash, faceIndex: 0 }],
+    defaultFont: { family: 'DejaVu Sans', sizeHalfPoints: 24 },
+  });
+
+  bytes.fill(0);
+  const shaping = await pending;
+  const resolved = shaping.fonts.resolve(request);
+  if (resolved instanceof Error) throw resolved;
+  // Admission checked the original bytes. Neither the browser nor HarfBuzz gets the zeros.
+  expect(() => resolved.bytes).toThrow('changed after admission');
+  const environment = createShapingEnvironment({
+    ...shaping.environment,
+    font: resolved,
+    direction: 'ltr',
+    fallbackOrder: [],
+  });
+  let refusal: unknown;
+  try {
+    shaping.shaper.shape({ text: 'A', fontSizeHalfPoints: 22, bidiLevel: 0, environment });
+  } catch (error) {
+    refusal = error;
+  }
+  expect(refusal).toBeInstanceOf(HarfBuzzShapingError);
+  expect((refusal as HarfBuzzShapingError).code).toBe('malformedFont');
+  expect((refusal as HarfBuzzShapingError).diagnostic).toContain('changed after admission');
   shaping.shaper.dispose();
 });
 
@@ -510,7 +550,7 @@ test('samples bounded arrays by index instead of trusting caller-owned map metho
   shaping.shaper.dispose();
 });
 
-test('copies each valid source exactly once into snapshot ownership', async () => {
+test('adopts a whole-buffer source without copying it', async () => {
   const bytes = new Uint8Array(await Bun.file(fontUrl).arrayBuffer());
   const counters = { copies: 0, hashes: 0, admissions: 0 };
   const shaping = await createLayoutShaping(
@@ -521,6 +561,38 @@ test('copies each valid source exactly once into snapshot ownership', async () =
         {
           request: { family: 'DejaVu Sans', weight: 400, style: 'normal' },
           id: 'single-copy',
+          bytes,
+          hash: sha256FontBytes(bytes),
+          faceIndex: 0,
+        },
+      ],
+      defaultFont: { family: 'DejaVu Sans', sizeHalfPoints: 24 },
+    },
+    {
+      onFontByteCopy: () => (counters.copies += 1),
+      onFontHash: () => (counters.hashes += 1),
+      onFontAdmission: () => (counters.admissions += 1),
+    }
+  );
+
+  expect(counters).toEqual({ copies: 0, hashes: 1, admissions: 1 });
+  shaping.shaper.dispose();
+});
+
+test('copies a source that is a view into a larger buffer exactly once', async () => {
+  const file = new Uint8Array(await Bun.file(fontUrl).arrayBuffer());
+  const backing = new Uint8Array(file.byteLength + 8);
+  backing.set(file, 4);
+  const bytes = backing.subarray(4, 4 + file.byteLength);
+  const counters = { copies: 0, hashes: 0, admissions: 0 };
+  const shaping = await createLayoutShaping(
+    {
+      epoch: 7,
+      maxFontBytes: 2_000_000,
+      sources: [
+        {
+          request: { family: 'DejaVu Sans', weight: 400, style: 'normal' },
+          id: 'view-copy',
           bytes,
           hash: sha256FontBytes(bytes),
           faceIndex: 0,

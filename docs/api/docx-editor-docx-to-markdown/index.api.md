@@ -713,6 +713,7 @@ export function openDocumentForExport(source: ExportDocumentSource, options?: Op
 
 // @public
 export interface OpenDocumentForExportOptions {
+    readonly compactLayoutBoxes?: boolean;
     readonly convertPreservedImage?: PreservedImageConverter;
     readonly displayMode?: ReviewDisplayMode;
     readonly imageDecodePort?: ImageDecodePort;
@@ -723,6 +724,8 @@ export interface OpenDocumentForExportOptions {
     readonly revisionAuthorSlots?: Readonly<Record<string, number>>;
     readonly revisionMarkup?: RevisionMarkupOptions;
     readonly signal?: AbortSignal;
+    // @beta
+    readonly spans?: SpanGranularity;
 }
 
 // @public
@@ -1013,6 +1016,9 @@ export interface SourceCrop {
     // (undocumented)
     readonly top: number;
 }
+
+// @beta
+export type SpanGranularity = 'word' | 'run';
 
 // @public
 export type TextboxOutlineProjection = {

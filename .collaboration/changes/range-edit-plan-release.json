@@ -1,0 +1,13 @@
+{
+  "impact": "no-impact",
+  "fields": [],
+  "before": "A deletion plan exposed its replacement landing through a getter written in an object literal.",
+  "after": "The plan is a class instance whose prototype getter computes the same landing on first read.",
+  "reason": "Only how the landing is computed and held changes. The plan's ops, collapse position, and landing are the same values, so no shared field, operation, node identity, snapshot, or awareness payload changes.",
+  "tests": [
+    "packages/core/src/store/__tests__/clipboard-fragment.test.ts",
+    "packages/pro/src/collaboration/__tests__/document-tracked-paragraph-deletion.test.ts"
+  ],
+  "changeset": "range-edit-plan-release",
+  "migration": null
+}

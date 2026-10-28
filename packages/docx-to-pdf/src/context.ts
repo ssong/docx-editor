@@ -177,6 +177,27 @@ export class Work {
     await new Promise<void>((resolve) => setImmediate(resolve));
     this.check();
   }
+  /** Reports waiting in one bucket per phase, keyed as `report` dedupes them. */
+  private held: Map<string, Parameters<Work['report']>>[] | null = null;
+  private heldPhase = 0;
+  /**
+   * Hold reports in `phases` buckets until {@link releaseReports}. A caller that runs its
+   * phases page by page then reports in the order a phase-by-phase pass gives.
+   */
+  holdReports(phases: number): void {
+    this.held = Array.from({ length: phases }, () => new Map());
+    this.heldPhase = 0;
+  }
+  /** The bucket that holds reports from now on. */
+  reportPhase(phase: number): void {
+    this.heldPhase = phase;
+  }
+  /** Report everything held, phase by phase, and stop holding. */
+  releaseReports(): void {
+    const held = this.held ?? [];
+    this.held = null;
+    for (const bucket of held) for (const args of bucket.values()) this.report(...args);
+  }
   report(
     code: string,
     message: string,
@@ -186,6 +207,14 @@ export class Work {
   ): void {
     const key = `${code}:${pageIndex ?? ''}:${origin?.originIndex ?? ''}:${message}`;
     if (this.seen.has(key)) return;
+    const held = this.held?.[this.heldPhase];
+    if (held) {
+      if (held.has(key)) return;
+      // Each held key is new, so a full bucket alone already passes the limit.
+      if (this.diagnostics.length + held.size >= 10_000) throw new PdfWorkLimitError();
+      held.set(key, [code, message, pageIndex, severity, origin]);
+      return;
+    }
     if (this.diagnostics.length >= 10_000) throw new PdfWorkLimitError();
     this.seen.add(key);
     this.diagnostics.push(

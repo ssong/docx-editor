@@ -698,7 +698,6 @@ function placeCellParagraph(
       pendingLine,
       paragraphId,
       penX,
-      y,
       placedDrawings,
       lineIndent,
       lineAvailableWidth,

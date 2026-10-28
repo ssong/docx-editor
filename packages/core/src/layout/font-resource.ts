@@ -274,7 +274,82 @@ function copyFontBytes(bytes: Uint8Array): Uint8Array {
   return copy;
 }
 
-/** One source whose caller-owned bytes were copied and hashed exactly once. @internal */
+const typedArrayBuffer = Object.getOwnPropertyDescriptor(TYPED_ARRAY_PROTOTYPE, 'buffer')!.get!;
+const typedArrayByteOffset = Object.getOwnPropertyDescriptor(
+  TYPED_ARRAY_PROTOTYPE,
+  'byteOffset'
+)!.get!;
+const arrayBufferByteLength = Object.getOwnPropertyDescriptor(
+  ArrayBuffer.prototype,
+  'byteLength'
+)!.get!;
+const arrayBufferResizable = Object.getOwnPropertyDescriptor(
+  ArrayBuffer.prototype,
+  'resizable'
+)?.get;
+
+/**
+ * Engine views over memory the caller still holds, with a fingerprint of the bytes as they were
+ * hashed. Admission checks it again after validation, and so does every copy handed to HarfBuzz or
+ * the browser, so a caller that changes its buffer later loses that face instead of reaching a
+ * native parser with bytes nothing validated.
+ */
+const adoptedFontBytes = new WeakMap<Uint8Array, string>();
+
+/**
+ * A fast fingerprint for adopted bytes. It detects a caller writing to a buffer it handed over;
+ * the caller is trusted code that could pass any bytes it liked, so this is not a second hash.
+ * SHA-256 of the default faces takes about 50 ms in Chromium, and this takes about 3 ms.
+ */
+function fontBytesFingerprint(bytes: Uint8Array): string {
+  const length = bytes.byteLength;
+  const aligned = bytes.byteOffset % 4 === 0;
+  const count = aligned ? length >>> 2 : 0;
+  const words = new Int32Array(bytes.buffer, aligned ? bytes.byteOffset : 0, count);
+  let first = 0x811c9dc5 | 0;
+  let second = 0x01000193 | 0;
+  for (let index = 0; index < count; index += 1) {
+    const word = words[index]!;
+    first = Math.imul(first ^ word, 0x9e3779b1);
+    first = (first << 13) | (first >>> 19);
+    second = Math.imul(second + word, 0x85ebca6b) ^ (second >>> 16);
+  }
+  for (let index = count << 2; index < length; index += 1) {
+    first = Math.imul(first ^ bytes[index]!, 0x9e3779b1);
+    second = Math.imul(second + bytes[index]!, 0x85ebca6b) ^ (second >>> 16);
+  }
+  return `${first >>> 0}:${second >>> 0}:${length}`;
+}
+
+/**
+ * The bytes the engine keeps for one source: the caller's own memory when that is safe to share,
+ * otherwise a copy. Font bytes are megabytes per family, and a host keeps its fragment for the next
+ * document, so a copy here held every face twice for the editor's lifetime.
+ *
+ * Only a whole, fixed-length, unshared `ArrayBuffer` is adopted. A view into a larger buffer would
+ * keep the rest of it alive, another thread can write a `SharedArrayBuffer` during validation, and
+ * a resizable buffer can shrink under a view. Each of those is copied, as before.
+ */
+function ownFontBytes(bytes: Uint8Array): { readonly bytes: Uint8Array; readonly copied: boolean } {
+  const byteLength = fontByteLength(bytes);
+  const buffer = typedArrayBuffer.call(bytes) as ArrayBufferLike;
+  let whole = false;
+  try {
+    // The intrinsic getter throws for a SharedArrayBuffer, whatever its toStringTag says.
+    whole =
+      arrayBufferByteLength.call(buffer) === byteLength &&
+      typedArrayByteOffset.call(bytes) === 0 &&
+      arrayBufferResizable?.call(buffer) !== true;
+  } catch {
+    whole = false;
+  }
+  if (!whole) return { bytes: copyFontBytes(bytes), copied: true };
+  const view = new Uint8Array(buffer as ArrayBuffer);
+  adoptedFontBytes.set(view, fontBytesFingerprint(view));
+  return { bytes: view, copied: false };
+}
+
+/** One source whose bytes the engine owns or adopted, hashed exactly once. @internal */
 export interface PreparedFontResourceDefinition extends FontResourceDefinition {
   readonly [PREPARED_FONT_RESOURCE_BRAND]: true;
   /** Null for forbidden sources, whose bytes admission deliberately never touches. */
@@ -297,8 +372,8 @@ export function prepareFontResourceDefinition(
     preparedFontResourceHashes.set(prepared, null);
     return prepared;
   }
-  const bytes = copyFontBytes(definition.bytes);
-  instrumentation?.onOwnedByteCopy?.();
+  const { bytes, copied } = ownFontBytes(definition.bytes);
+  if (copied) instrumentation?.onOwnedByteCopy?.();
   instrumentation?.onHash?.();
   const actualHash = sha256FontBytes(bytes);
   const prepared = Object.freeze({
@@ -386,7 +461,7 @@ class OwnedResolvedFont implements ResolvedFont {
   }
 
   get bytes(): Uint8Array {
-    return trustedFontBytes(this).slice();
+    return copyTrustedFontBytes(this);
   }
 }
 
@@ -413,6 +488,20 @@ export const trustedFontBytes = (font: ResolvedFont): Uint8Array => {
   const bytes = ownedFontBytes.get(font);
   if (!bytes) throw new TypeError('Resolved font has no owned byte capability');
   return bytes;
+};
+
+/**
+ * A private copy of an admitted face for a consumer that keeps or parses it natively (HarfBuzz,
+ * `FontFace`). Adopted bytes are re-hashed here, so the copy is exactly what admission validated.
+ */
+export const copyTrustedFontBytes = (font: ResolvedFont): Uint8Array => {
+  const bytes = trustedFontBytes(font);
+  const copy = bytes.slice();
+  const expected = adoptedFontBytes.get(bytes);
+  if (expected !== undefined && fontBytesFingerprint(copy) !== expected) {
+    throw new TypeError('Font bytes changed after admission');
+  }
+  return copy;
 };
 
 /** Module-internal admission metadata; table directories are never rescanned while shaping. */
@@ -533,9 +622,9 @@ const storeResource = (
     return { kind: 'overLimit', actual: byteLength };
   }
   const preparedHash = preparedFontResourceActualHash(definition);
-  const ownedBytes =
-    preparedHash === undefined ? copyFontBytes(definition.bytes) : definition.bytes;
-  if (preparedHash === undefined) instrumentation?.onOwnedByteCopy?.();
+  const owned = preparedHash === undefined ? ownFontBytes(definition.bytes) : undefined;
+  const ownedBytes = owned?.bytes ?? definition.bytes;
+  if (owned?.copied) instrumentation?.onOwnedByteCopy?.();
   if (preparedHash === undefined) instrumentation?.onHash?.();
   const actualHash = preparedHash ?? sha256FontBytes(ownedBytes);
   if (definition.hash !== actualHash) {
@@ -552,6 +641,16 @@ const storeResource = (
     return {
       kind: 'malformed',
       diagnostic: error instanceof Error ? error.message : 'font validator threw',
+    };
+  }
+  // Adopted memory is still the caller's. Checking it again after the validators, with no yield
+  // between, binds the admitted hash to the bytes they actually checked.
+  const fingerprint = adoptedFontBytes.get(ownedBytes);
+  if (fingerprint !== undefined && fontBytesFingerprint(ownedBytes) !== fingerprint) {
+    return {
+      kind: 'hashMismatch',
+      expectedHash: actualHash,
+      actualHash: sha256FontBytes(ownedBytes),
     };
   }
   const stored = {

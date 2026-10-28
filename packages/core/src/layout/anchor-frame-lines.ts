@@ -3,6 +3,7 @@
 
 import type { PendingLine } from './pending-line.ts';
 import type { LineRecord } from './semantic-records.ts';
+import { withBox } from './compact-box.ts';
 
 /**
  * The paragraph's broken lines stacked down from where it first began, as frame geometry.
@@ -27,10 +28,14 @@ export function syntheticAnchorLines(
       baseline: brokenLine.baseline,
       leading: brokenLine.leading,
       trailingSpacing: brokenLine.trailingSpacing,
-      spans: brokenLine.spans.map((span) => ({
-        ...span,
-        box: { ...span.box, x: span.box.x + origin.columnX, y },
-      })),
+      // Span boxes are relative to the line top vertically, so only x moves.
+      spans:
+        origin.columnX === 0
+          ? brokenLine.spans
+          : brokenLine.spans.map((span) => ({
+              ...span,
+              box: withBox(span.box, { x: span.box.x + origin.columnX }),
+            })),
     };
     y += brokenLine.height + (brokenLine.exclusionSkipBefore ?? 0);
     return lineRecord;

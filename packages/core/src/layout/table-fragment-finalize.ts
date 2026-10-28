@@ -125,11 +125,8 @@ export function shiftBlocks(
         : {}),
       lines: block.lines.map((line) => ({
         ...line,
+        // Span boxes are relative to their line vertically, so the spans stay as they are.
         box: { ...line.box, y: line.box.y + dy },
-        spans: line.spans.map((span) => ({
-          ...span,
-          box: { ...span.box, y: span.box.y + dy },
-        })),
         ...(line.drawings
           ? {
               drawings: line.drawings.map((drawing) => shiftInlineDrawingRecord(drawing, 0, dy)),

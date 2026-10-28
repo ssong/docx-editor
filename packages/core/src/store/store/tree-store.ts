@@ -1,6 +1,12 @@
 import { createFormsTextReplacementContext } from './forms-text-replacement.ts';
 import { restoreHistoryPackage } from './history-package-index.ts';
-import { reportHistoryGroup, type HistoryGroup } from './history-group.ts';
+import {
+  compactCoveredEntries,
+  HistorySnapshot,
+  type HistoryChunkSource,
+  type HistoryEntry,
+} from './history-snapshot.ts';
+import { reportHistoryGroup } from './history-group.ts';
 import { withFieldResultsMode } from '../package/field-result-mode.ts';
 import type { TransactOptions, TreeDocumentStoreOptions } from './tree-store-options.ts';
 export type { TransactOptions, TreeDocumentStoreOptions } from './tree-store-options.ts';
@@ -174,27 +180,6 @@ export interface TransactionContext {
   selectionAfter(selection: SelectionMark | null): void;
 }
 
-interface HistoryEntry {
-  /**
-   * The whole package as it was, not just the story part.
-   *
-   * Affordable for the same reason a part snapshot was: parts are immutable and deep-frozen, so
-   * a package snapshot is a Map of references and every part the transaction did not touch is
-   * object-identical to the one before it. Undo stays a pointer swap, and it now reverses every
-   * part one intent wrote rather than only the story.
-   */
-  readonly pkg: OoxmlPackage;
-  readonly revision: number;
-  readonly selectionBefore: SelectionMark | null;
-  readonly selectionAfter: SelectionMark | null;
-  /**
-   * The gesture this entry is still collecting, while it is the newest entry and nothing
-   * has closed it. Only ever set on the top of the undo stack: {@link closeHistoryGroup}
-   * strips it, and undo and redo never copy it onto the entries they push.
-   */
-  readonly group?: HistoryGroup;
-}
-
 const IMPACT_RANK: Record<ImpactClass, number> = {
   'text-local': 0,
   'paragraph-local': 1,
@@ -254,6 +239,8 @@ export class TreeDocumentStore {
   private commitCounter = 0;
   private readonly undoStack: HistoryEntry[] = [];
   private readonly redoStack: HistoryEntry[] = [];
+  /** The newest chunks of each part, for the next history entry that is compacted. */
+  private readonly chunkSource: HistoryChunkSource = new Map();
   private pushCount = 0;
   private readonly subscribers = new Set<(change: TreeModelChange) => void>();
   private readonly historyLimit: number;
@@ -790,7 +777,7 @@ export class TreeDocumentStore {
         const group = options.historyGroup;
         const top = this.undoStack[this.undoStack.length - 1];
         if (group !== undefined && top !== undefined && top.group === group) {
-          // Same gesture, still open: the entry keeps its `pkg` and `selectionBefore` — the
+          // Same gesture, still open: the entry keeps its `snapshot` and `selectionBefore` — the
           // state before the FIRST frame — and takes this frame's selection as its end.
           this.undoStack[this.undoStack.length - 1] = {
             ...top,
@@ -798,7 +785,7 @@ export class TreeDocumentStore {
           };
         } else {
           this.pushUndo({
-            pkg: before,
+            snapshot: new HistorySnapshot(before),
             revision: beforeRevision,
             selectionBefore,
             selectionAfter,
@@ -812,6 +799,7 @@ export class TreeDocumentStore {
 
     this.current = working;
     this.rev += 1;
+    this.compactHistory();
     if (options.story) this.storyRef = options.story;
     if (options.minimumImpact && IMPACT_RANK[options.minimumImpact] > IMPACT_RANK[impact]) {
       impact = options.minimumImpact;
@@ -847,7 +835,7 @@ export class TreeDocumentStore {
     if (this.composition) return; // already open; nested starts are a no-op, not an error
     this.composition = {
       entry: {
-        pkg: this.current,
+        snapshot: new HistorySnapshot(this.current),
         revision: this.rev,
         selectionBefore,
         selectionAfter: null,
@@ -863,6 +851,7 @@ export class TreeDocumentStore {
     if (!open || !open.committed) return;
     this.pushUndo(open.entry);
     this.redoStack.length = 0;
+    this.compactHistory();
   }
 
   /**
@@ -893,13 +882,14 @@ export class TreeDocumentStore {
     this.closeHistoryGroup();
     const beforeRevision = this.rev;
     this.redoStack.push({
-      pkg: this.current,
+      snapshot: new HistorySnapshot(this.current),
       revision: this.rev,
       selectionBefore: entry.selectionBefore,
       selectionAfter: entry.selectionAfter,
     });
-    this.current = restoreHistoryPackage(this.current, entry.pkg);
+    this.current = restoreHistoryPackage(this.current, entry.snapshot.package());
     this.rev += 1;
+    this.compactHistory();
     return this.publish(ORIGIN_IDS.mutationUndo, beforeRevision, null, this.storyRef ?? undefined);
   }
 
@@ -909,13 +899,14 @@ export class TreeDocumentStore {
     this.closeHistoryGroup();
     const beforeRevision = this.rev;
     this.undoStack.push({
-      pkg: this.current,
+      snapshot: new HistorySnapshot(this.current),
       revision: this.rev,
       selectionBefore: entry.selectionBefore,
       selectionAfter: entry.selectionAfter,
     });
-    this.current = restoreHistoryPackage(this.current, entry.pkg);
+    this.current = restoreHistoryPackage(this.current, entry.snapshot.package());
     this.rev += 1;
+    this.compactHistory();
     return this.publish(ORIGIN_IDS.mutationRedo, beforeRevision, null, this.storyRef ?? undefined);
   }
 
@@ -945,6 +936,11 @@ export class TreeDocumentStore {
     this.pushCount += 1;
     this.undoStack.push(entry);
     if (this.undoStack.length > this.historyLimit) this.undoStack.shift();
+  }
+
+  /** Compact the entries another entry now covers. See `history-snapshot.ts`. */
+  private compactHistory(): void {
+    compactCoveredEntries([this.undoStack, this.redoStack], this.current, this.chunkSource);
   }
 
   private publish(

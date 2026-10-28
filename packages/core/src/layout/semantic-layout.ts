@@ -2,7 +2,6 @@ import { sectionPrepassInputsMatch } from './section-prepass-inputs.ts';
 import { drawingInputsUnchangedByTextEdit } from './drawing-text-only-change.ts';
 import { tryUpdateTableSession, reuseUnchangedLayout } from './table-text-session.ts';
 import { carryLayoutReadCaches } from './layout-read-caches.ts';
-import { withFieldResultsMode } from '../store/package/field-result-mode.ts';
 import { resolveBodyRefFields } from './style-separator-ref.ts';
 import { styleSeparatorToken } from './style-separator-group.ts';
 import {
@@ -94,7 +93,12 @@ import { paragraphBorderGroupKey } from './cell-border-groups.ts';
 import { paragraphBoxOutdent } from './paragraph-indent.ts';
 import { paragraphShadingBox } from './ooxml-shading.ts';
 import { paragraphFragmentBorders } from './paragraph-fragment-borders.ts';
-import { holdsOnlyPageBreak, lineBreakAfterFields, lineContentX } from './pending-line.ts';
+import {
+  holdsOnlyPageBreak,
+  lineBreakAfterFields,
+  lineContentX,
+  placeLineSpans,
+} from './pending-line.ts';
 import { withSectionBreakMarks } from './section-break-marks.ts';
 import { alignLineWithPictures } from './line-picture-alignment.ts';
 import { createLeadingBreakGroups } from './leading-break-border-group.ts';
@@ -212,7 +216,7 @@ import { inlineDrawingFlow } from './inline-textbox-flow.ts';
 import { convergeExclusionLayout } from './exclusion-layout-steps.ts';
 import { withInterimLayout, withRelabeledProgress } from './interim-layout.ts';
 import { layoutWithFurnitureRetry } from './furniture-retry-layout.ts';
-import { drainLayoutSteps, stepsInFieldResultsMode, type LayoutSteps } from './layout-steps.ts';
+import { drainLayoutSteps, stepsInLayoutModes, type LayoutSteps } from './layout-steps.ts';
 import { preparedBlocks } from './prepared-block-memo.ts';
 import {
   type BlockLayoutOptions as ColumnBalanceBlockLayoutOptions,
@@ -245,9 +249,7 @@ export function layoutSemanticDocument(
   revision: number,
   options: SemanticLayoutOptions
 ): SemanticLayout {
-  return withFieldResultsMode(options.fieldResults, () =>
-    drainLayoutSteps(layoutSemanticDocumentSteps(part, revision, options))
-  );
+  return drainLayoutSteps(layoutSemanticDocumentSteps(part, revision, options));
 }
 
 /**
@@ -261,7 +263,7 @@ export function layoutSemanticDocumentSteps(
   revision: number,
   options: SemanticLayoutOptions
 ): LayoutSteps<SemanticLayout> {
-  return stepsInFieldResultsMode(options.fieldResults, layoutInModeSteps(part, revision, options));
+  return stepsInLayoutModes(options, layoutInModeSteps(part, revision, options));
 }
 
 function* layoutInModeSteps(
@@ -2658,12 +2660,7 @@ function* layoutBlocksPass(
       const lineAvailableWidth = Math.max(1, available - firstLineOffset);
       // Spans and inline drawings come from one pen, so they share one origin.
       const penX = columnX - (rtl ? firstLineOffset : 0);
-      const placedSpans = pendingLine.spans.map((span) => ({
-        ...span,
-        // The broken range already names this paragraph unless a shared break was reused.
-        range: span.range.paragraphId === paragraphId ? span.range : { ...span.range, paragraphId },
-        box: { ...span.box, x: span.box.x + penX, y: cursorY },
-      }));
+      const placedSpans = placeLineSpans(pendingLine.spans, paragraphId, penX);
       // Word aligns inside the passage a float leaves the line, not the page margins.
       const measure = lineAlignmentMeasure(pendingLine, columnX, lineIndent, lineAvailableWidth);
       const placedDrawings = pendingLine.drawings.map((drawing) =>

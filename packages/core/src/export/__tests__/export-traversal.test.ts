@@ -16,7 +16,8 @@ function span(paragraphId: string, text: string, projected = false): StyleSpanRe
     range: { paragraphId, start: 0, end: text.length },
     text,
     style: {},
-    box: { x: 1, y: 2, width: Math.max(1, text.length), height: 10 },
+    // Vertically relative to the line, which the fixture puts at y 2.
+    box: { x: 1, y: 0, width: Math.max(1, text.length), height: 10 },
     ...(projected ? { projected: true } : {}),
   } as unknown as StyleSpanRecord;
 }
@@ -32,6 +33,7 @@ function paragraph(
     lines: [
       {
         range: { paragraphId: lineParagraphId, start: 0, end: 1 },
+        box: { x: 0, y: 2, width: 100, height: 10 },
         spans,
         drawings: [],
       },

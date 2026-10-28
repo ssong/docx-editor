@@ -8,6 +8,7 @@ import { cjkCutAllowedBetween, lastCodePointOf } from './cjk-line-break.ts';
 import { measureDisplayText } from './run-style.ts';
 import { styleForFontSlot } from './script-itemization.ts';
 import type { StyleSpanRecord, TextMeasurer } from './semantic-records.ts';
+import { withBox } from './compact-box.ts';
 
 export function justifyCjkSpans(
   spans: readonly StyleSpanRecord[],
@@ -63,7 +64,7 @@ export function justifyCjkSpans(
           start: span.range.start + part.from,
           end: span.range.start + part.to,
         },
-        box: { ...span.box, x, width },
+        box: withBox(span.box, { x, width }),
       });
       x += width;
     }
@@ -104,6 +105,6 @@ export function justifyCjkSpans(
   let shift = 0;
   return split.map((span, index) => {
     if (gaps.has(index)) shift += step;
-    return shift === 0 ? span : { ...span, box: { ...span.box, x: span.box.x + shift } };
+    return shift === 0 ? span : { ...span, box: withBox(span.box, { x: span.box.x + shift }) };
   });
 }

@@ -6,6 +6,7 @@ import type { TextMeasurer } from './semantic-records.ts';
 import type { FontSlot } from './script-itemization.ts';
 import { isRunKerningEnabled } from './run-kerning.ts';
 import type { ResolvedRunStyle } from './run-style.ts';
+import { withBox } from './compact-box.ts';
 
 /**
  * Spaces that may hang/clip at a line end instead of wrapping onto a new line. Zero-width
@@ -84,17 +85,16 @@ export function appendWordEnd(
       ...span,
       text: span.text.slice(0, clipped.length),
       range: { ...span.range, end: split },
-      box: { ...span.box, width: clipped.visibleWidth },
+      box: withBox(span.box, { width: clipped.visibleWidth }),
     },
     {
       ...span,
       text: span.text.slice(clipped.length),
       range: { ...span.range, start: split },
-      box: {
-        ...span.box,
+      box: withBox(span.box, {
         x: span.box.x + clipped.visibleWidth,
         width: Math.max(0, span.box.width - clipped.visibleWidth),
-      },
+      }),
       lineEndWhitespace: true,
     }
   );

@@ -180,10 +180,9 @@ describe('shared paragraph break dependencies', () => {
       expect(preparations).toBe(1);
       expect(lazyCache.stats.hits).toBe(1);
       expect(lazyCache.stats.misses).toBe(1);
-      if (retainAcrossPasses) {
-        expect(reused).not.toBe(initial);
-        expect(reused[0]).not.toBe(initial[0]);
-      } else expect(reused).toBe(initial);
+      // A retained entry is frozen on the miss too, so both reads return the cached lines.
+      expect(reused).toBe(initial);
+      expect(Object.isFrozen(initial[0])).toBe(retainAcrossPasses);
       expect(breakPreparedParagraphLazily(lazyCache, null, prepare)).toEqual(legacy);
       expect(preparations).toBe(2);
       expect(lazyCache.stats.hits).toBe(1);
