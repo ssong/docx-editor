@@ -2,7 +2,6 @@ import { sectionPrepassInputsMatch } from './section-prepass-inputs.ts';
 import { drawingInputsUnchangedByTextEdit } from './drawing-text-only-change.ts';
 import { tryUpdateTableSession, reuseUnchangedLayout } from './table-text-session.ts';
 import { carryLayoutReadCaches } from './layout-read-caches.ts';
-import { withFieldResultsMode } from '../store/package/field-result-mode.ts';
 import { resolveBodyRefFields } from './style-separator-ref.ts';
 import { styleSeparatorToken } from './style-separator-group.ts';
 import {
@@ -217,7 +216,7 @@ import { inlineDrawingFlow } from './inline-textbox-flow.ts';
 import { convergeExclusionLayout } from './exclusion-layout-steps.ts';
 import { withInterimLayout, withRelabeledProgress } from './interim-layout.ts';
 import { layoutWithFurnitureRetry } from './furniture-retry-layout.ts';
-import { drainLayoutSteps, stepsInFieldResultsMode, type LayoutSteps } from './layout-steps.ts';
+import { drainLayoutSteps, stepsInLayoutModes, type LayoutSteps } from './layout-steps.ts';
 import { preparedBlocks } from './prepared-block-memo.ts';
 import {
   type BlockLayoutOptions as ColumnBalanceBlockLayoutOptions,
@@ -250,9 +249,7 @@ export function layoutSemanticDocument(
   revision: number,
   options: SemanticLayoutOptions
 ): SemanticLayout {
-  return withFieldResultsMode(options.fieldResults, () =>
-    drainLayoutSteps(layoutSemanticDocumentSteps(part, revision, options))
-  );
+  return drainLayoutSteps(layoutSemanticDocumentSteps(part, revision, options));
 }
 
 /**
@@ -266,7 +263,7 @@ export function layoutSemanticDocumentSteps(
   revision: number,
   options: SemanticLayoutOptions
 ): LayoutSteps<SemanticLayout> {
-  return stepsInFieldResultsMode(options.fieldResults, layoutInModeSteps(part, revision, options));
+  return stepsInLayoutModes(options, layoutInModeSteps(part, revision, options));
 }
 
 function* layoutInModeSteps(

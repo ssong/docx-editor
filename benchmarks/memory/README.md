@@ -54,6 +54,7 @@ If Playwright cannot find its browser, pass a Chromium executable with `--chromi
 | `--server-edits` | `200` | Single-character edits in the server edit stage. |
 | `--browser-edits` | `50` | Typed characters in the browser edit stage. |
 | `--fonts` | `shaped` | `shaped` loads the packaged default fonts in the browser, as production hosts do. `fixed` uses the fixed-width measurer. |
+| `--layout-spans` | `word` | The layout option for spans per line. `run` joins the words of a run segment into one span (`SemanticLayoutOptions.spans`). |
 | `--out` | `results/<date>-<commit>.json` | The report file. |
 | `--compare` |  | An earlier report. The tool prints the change for each stage. |
 | `--no-build` |  | Reuse the benchmark page from the previous run. |

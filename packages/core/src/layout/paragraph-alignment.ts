@@ -13,6 +13,7 @@ import {
 } from './trailing-spaces.ts';
 import { alignBidiTrailingSpaces, bidiTrailingSpaces } from './bidi-trailing-spaces.ts';
 import { alignPassageSpans, partUsedWidth, type LinePassage } from './passage-alignment.ts';
+import { mergeAlignedSpans } from './run-span-merge.ts';
 
 const OVERFLOW_TOLERANCE_PT = 0.001;
 const SLACK_RESIDUE_PT = 1e-9;
@@ -408,6 +409,8 @@ export function boxLineSetsLikeLastLine(
  * Align one line. `lastLineShrinks` is the line's `PendingLine.spaceShrink`: without
  * it, a justified last line that overflows keeps its natural spacing. `passages` are the float
  * passages of a line that steps over a float; each part of the line aligns inside its own.
+ *
+ * In a pass with `spans: 'run'`, the aligned spans that abut merge into one per run segment.
  */
 export function alignSpans(
   spans: readonly StyleSpanRecord[],
@@ -421,6 +424,36 @@ export function alignSpans(
   pageBreaksIgnored = false,
   lastLineShrinks = false,
   passages?: readonly LinePassage[]
+): readonly StyleSpanRecord[] {
+  return mergeAlignedSpans(
+    alignSpansApart(
+      spans,
+      measurer,
+      indentLeft,
+      available,
+      alignment,
+      isLastLine,
+      lineUsedWidth,
+      paragraphRtl,
+      pageBreaksIgnored,
+      lastLineShrinks,
+      passages
+    )
+  );
+}
+
+function alignSpansApart(
+  spans: readonly StyleSpanRecord[],
+  measurer: TextMeasurer,
+  indentLeft: number,
+  available: number,
+  alignment: Alignment,
+  isLastLine: boolean,
+  lineUsedWidth: number | undefined,
+  paragraphRtl: boolean,
+  pageBreaksIgnored: boolean,
+  lastLineShrinks: boolean,
+  passages: readonly LinePassage[] | undefined
 ): readonly StyleSpanRecord[] {
   // A right-to-left last line aligns to the right, unless the flow kept its last word by
   // borrowing inter-word space: then it compresses as justified text does.

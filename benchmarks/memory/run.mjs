@@ -28,6 +28,7 @@ const { values } = parseArgs({
     'server-edits': { type: 'string', default: '200' },
     'browser-edits': { type: 'string', default: '50' },
     fonts: { type: 'string', default: 'shaped' },
+    'layout-spans': { type: 'string', default: 'word' },
     out: { type: 'string' },
     compare: { type: 'string' },
     'no-build': { type: 'boolean', default: false },
@@ -50,6 +51,7 @@ Options:
   --server-edits <n>    single-character edits in the server edit stage (default: 200)
   --browser-edits <n>   typed characters in the browser edit stage (default: 50)
   --fonts <mode>        shaped (packaged default fonts, HarfBuzz) | fixed (default: shaped)
+  --layout-spans <m>    the layout option for spans per line: word | run (default: word)
   --out <file>          write the JSON report here
                         (default: benchmarks/memory/results/<date>-<commit>.json)
   --compare <file>      print the change against an earlier report
@@ -74,6 +76,8 @@ if (targets.includes('pdf') && !pdfBuilt) {
   throw new Error('Build @docx-editor.dev/docx-to-pdf first: bun run build:pdf.');
 }
 if (!['shaped', 'fixed'].includes(values.fonts)) throw new Error('--fonts takes shaped or fixed');
+if (!['word', 'run'].includes(values['layout-spans']))
+  throw new Error('--layout-spans takes word or run');
 if (!existsSync(join(root, 'packages/core/dist/store.js'))) {
   throw new Error('Build @docx-editor.dev/core first (see --help).');
 }
@@ -147,7 +151,15 @@ async function runServer() {
   for (const doc of documents) {
     const samples = [];
     for (let i = 0; i < runs; i += 1)
-      samples.push(await probe('server-probe.mjs', [doc.path, '--edits', values['server-edits']]));
+      samples.push(
+        await probe('server-probe.mjs', [
+          doc.path,
+          '--edits',
+          values['server-edits'],
+          '--layout-spans',
+          values['layout-spans'],
+        ])
+      );
     const merged = mergeRuns(samples);
     delete merged.file;
     results.push({ document: doc.name, ...merged });
@@ -265,8 +277,8 @@ async function browserRun(chromium, origin, doc) {
       base = stages.at(-1).heapUsedMb;
     }
     const opened = await page.evaluate(
-      (url) => window.__memoryBench.open(url),
-      `/docs/${doc.name}.docx`
+      ([url, spans]) => window.__memoryBench.open(url, spans),
+      [`/docs/${doc.name}.docx`, values['layout-spans']]
     );
     await measure('open', opened.ms);
     const scrolled = await page.evaluate(() => window.__memoryBench.scrollThrough());
@@ -337,6 +349,7 @@ const report = {
   options: {
     runs,
     fonts: values.fonts,
+    layoutSpans: values['layout-spans'],
     serverEdits: Number(values['server-edits']),
     browserEdits: Number(values['browser-edits']),
   },

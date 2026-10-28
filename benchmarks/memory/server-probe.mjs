@@ -9,6 +9,7 @@
 // process high-water mark, which includes the garbage each stage created and freed.
 //
 // Usage: node --expose-gc benchmarks/memory/server-probe.mjs <document.docx> [--edits 200]
+//        [--layout-spans word|run]
 
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
@@ -17,7 +18,10 @@ if (typeof globalThis.gc !== 'function') throw new Error('Run with node --expose
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { edits: { type: 'string', default: '200' } },
+  options: {
+    edits: { type: 'string', default: '200' },
+    'layout-spans': { type: 'string', default: 'word' },
+  },
 });
 const file = positionals[0];
 if (!file) throw new Error('Pass the document path.');
@@ -76,7 +80,10 @@ let opened = await stage('open', () => {
 let session = null;
 let pages = 0;
 await stage('layout', async () => {
-  const result = exporter.openDocumentForExport(opened, { reuseAcrossRevisions: false });
+  const result = exporter.openDocumentForExport(opened, {
+    reuseAcrossRevisions: false,
+    spans: values['layout-spans'],
+  });
   if (!result.ok) throw new Error(`export open failed: ${result.reason}`);
   session = result.session;
   const layout = await session.layout();

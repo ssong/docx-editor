@@ -1,4 +1,4 @@
-import { paragraphAlignment } from './paragraph-alignment.ts';
+import { paragraphAlignment, type Alignment } from './paragraph-alignment.ts';
 import { paragraphIsRtl } from './rtl-paragraph.ts';
 /** Internal contract shared by body flow and bounded/table stories. */
 import type { OoxmlNode, OoxmlProperty } from '@docx-editor.dev/core/store';
@@ -6,6 +6,7 @@ import type { FieldPageContext } from './field-projection.ts';
 import type { ParagraphLayoutCache } from './layout-cache.ts';
 import { breakParagraph, type ParagraphFlowOptions, type PendingLine } from './paragraph-flow.ts';
 import { cacheBrokenLines } from './pending-line.ts';
+import { mergeClosedLineSpans } from './run-span-merge.ts';
 import {
   tabStopsFingerprint,
   withDefaultTabInterval,
@@ -179,6 +180,8 @@ export interface ParagraphBreakRequest {
     readonly inheritedRunProperties: readonly OoxmlProperty[];
     readonly markRunProperties: readonly OoxmlProperty[];
     readonly lineSpacing: ParagraphLayoutInputs['lineSpacing'];
+    /** How placement aligns the lines; a `run` pass merges the spans of some at close. */
+    readonly alignment?: Alignment;
   };
   readonly producer: string;
   readonly compatibilityMode?: number;
@@ -202,7 +205,13 @@ export function breakPreparedParagraphLazily(
   if (cached) return cached;
   const reused = reuse?.();
   if (reused) return reused;
-  const lines = breakPreparedParagraph({ ...prepare(), cache: undefined, cacheKey: null });
+  const request = prepare();
+  const lines = breakPreparedParagraph({ ...request, cache: undefined, cacheKey: null });
+  mergeClosedLineSpans(
+    lines,
+    request.formatting.alignment,
+    paragraphIsRtl(request.formatting.props)
+  );
   // Preserve the breaker's snapshot ownership and single lookup on a cache miss.
   return cache && cacheKey !== null ? cacheBrokenLines(cache, cacheKey, lines) : lines;
 }

@@ -258,6 +258,8 @@ export type {
 export type { BookmarkMarkOptionsSource } from './bookmark-chrome.ts';
 // `DocxEditorConfig.fieldResults` takes it.
 export type { FieldResultsMode } from '../store/package/field-result-mode.ts';
+// `DocxEditorConfig.layoutSpans` takes it.
+export type { SpanGranularity } from '../layout/run-span-merge.ts';
 // `DocxEditorConfig.contentLockPolicy` takes it.
 export type { ContentLockPolicy } from '../store/package/ooxml-edit.ts';
 // `DocxEditorConfig.lockedControlNavigation` takes it.

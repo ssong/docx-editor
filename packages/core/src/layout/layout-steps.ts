@@ -7,6 +7,7 @@
 
 import type { PageRecord, SemanticLayout } from './semantic-records.ts';
 import { withFieldResultsMode, type FieldResultsMode } from '../store/package/field-result-mode.ts';
+import { withSpanGranularity, type SpanGranularity } from './run-span-merge.ts';
 
 /** Body rows a table paginator places between two pause points. */
 export const TABLE_ROWS_PER_STEP = 8;
@@ -50,21 +51,22 @@ export function drainLayoutSteps<T>(steps: LayoutSteps<T>): T {
 }
 
 /**
- * `steps` with `mode` installed around every resume, and around the `finalize` of each report,
- * so a pass that pauses reads the same field offsets as one that runs straight through.
+ * `steps` with the pass's modes installed around every resume, and around the `finalize` of
+ * each report, so a pass that pauses reads the same field offsets, and merges the same spans,
+ * as one that runs straight through.
  */
-export function* stepsInFieldResultsMode<T>(
-  mode: FieldResultsMode | undefined,
+export function* stepsInLayoutModes<T>(
+  modes: { readonly fieldResults?: FieldResultsMode; readonly spans?: SpanGranularity },
   steps: LayoutSteps<T>
 ): LayoutSteps<T> {
-  if (mode === undefined) return yield* steps;
+  if (modes.fieldResults === undefined && modes.spans === undefined) return yield* steps;
+  const within = <R>(run: () => R): R =>
+    withSpanGranularity(modes.spans, () => withFieldResultsMode(modes.fieldResults, run));
   for (;;) {
-    const next = withFieldResultsMode(mode, () => steps.next());
+    const next = within(() => steps.next());
     if (next.done) return next.value;
     const progress = next.value;
     const finalize = progress?.finalize;
-    yield finalize
-      ? { ...progress, finalize: (pages) => withFieldResultsMode(mode, () => finalize(pages)) }
-      : progress;
+    yield finalize ? { ...progress, finalize: (pages) => within(() => finalize(pages)) } : progress;
   }
 }

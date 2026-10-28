@@ -723,6 +723,8 @@ export interface OpenDocumentForExportOptions {
     readonly revisionAuthorSlots?: Readonly<Record<string, number>>;
     readonly revisionMarkup?: RevisionMarkupOptions;
     readonly signal?: AbortSignal;
+    // @beta
+    readonly spans?: SpanGranularity;
 }
 
 // @public
@@ -1013,6 +1015,9 @@ export interface SourceCrop {
     // (undocumented)
     readonly top: number;
 }
+
+// @beta
+export type SpanGranularity = 'word' | 'run';
 
 // @public
 export type TextboxOutlineProjection = {
