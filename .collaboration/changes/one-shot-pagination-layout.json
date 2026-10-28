@@ -1,0 +1,10 @@
+{
+  "impact": "no-impact",
+  "fields": [],
+  "before": "The automation pagination provider laid out a live view with reuseAcrossRevisions defaulting to true, then disposed the session.",
+  "after": "The provider lays out with reuseAcrossRevisions: false, so the session drops its paragraph break cache and construction state after the one layout. Page numbers and the page count are the same.",
+  "reason": "Only the provider's export session cache retention changes. The measured layout, the field results it feeds, and every shared field, operation, node identity, snapshot, and awareness payload are unchanged.",
+  "tests": ["packages/core/src/automation/__tests__/pagination-provider.test.ts"],
+  "changeset": "one-shot-export-layout-cache",
+  "migration": null
+}
