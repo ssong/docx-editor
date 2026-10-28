@@ -9,6 +9,7 @@
 
 import { describe, expect, test } from 'bun:test';
 import { readOoxmlPart, type OoxmlNode, type OoxmlPart } from '../package/ooxml-tree.ts';
+import { canonicalOoxmlFingerprint } from '../package/ooxml-serialize.ts';
 import {
   carryIndexToRebuiltRoot,
   carryIndexToHistoryRoot,
@@ -219,6 +220,17 @@ test('external root rebuilds retain allocations after a preview steals the index
   expect(collectNodeIds(preview.part).has(next)).toBe(false);
 });
 
+/**
+ * The part history restores: the very part while it is the newest entry, and an equal part
+ * rebuilt from chunks below that (`history-snapshot.ts`), whose blocks are the same objects.
+ */
+function expectSameState(restored: OoxmlPart, expected: OoxmlPart): void {
+  if (restored === expected) return;
+  expect(canonicalOoxmlFingerprint(restored)).toBe(canonicalOoxmlFingerprint(expected));
+  const blocks = (part: OoxmlPart) => (part.root.children[0] as { children: OoxmlNode[] }).children;
+  blocks(restored).forEach((block, at) => expect(block).toBe(blocks(expected)[at]!));
+}
+
 test('history reuses node indexes while restoring exact nodes and parents', () => {
   const store = new TreeDocumentStore(
     load(Array.from({ length: 256 }, (_, i) => `Paragraph ${i}`))
@@ -237,12 +249,12 @@ test('history reuses node indexes while restoring exact nodes and parents', () =
   recorder.reset();
   for (let index = roots.length - 2; index >= 0; index -= 1) {
     expect(store.undo()).not.toBeNull();
-    expect(store.part).toBe(roots[index]!);
+    expectSameState(store.part, roots[index]!);
     expectIndexMatchesTree(store.part, `undo ${index}`);
   }
   for (let index = 1; index < roots.length; index += 1) {
     expect(store.redo()).not.toBeNull();
-    expect(store.part).toBe(roots[index]!);
+    expectSameState(store.part, roots[index]!);
     expectIndexMatchesTree(store.part, `redo ${index}`);
   }
   expect(recorder.completeBuilds).toBe(0);
