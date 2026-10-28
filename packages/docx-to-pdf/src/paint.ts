@@ -12,7 +12,7 @@ import {
   spanMarkup,
   type RowRevision,
 } from './revision-markup.ts';
-import { PDFDocument, type PDFPage } from 'pdf-lib';
+import { PDFDocument, type PDFPage, type PDFRawStream } from 'pdf-lib';
 import type {
   ExportSemanticLayout,
   FontBackedExportCapabilities,
@@ -25,8 +25,10 @@ import {
   runBorderStrokesForLine,
   type BlockFragmentRecord,
   type LayoutBox,
+  type PageRecord,
   type SemanticSpanVisit,
   type SemanticDrawingVisit,
+  type SemanticStoryVisit,
   type TableCellFragmentRecord,
 } from '@docx-editor.dev/core/layout';
 import {
@@ -473,37 +475,15 @@ export async function paint(
         );
     }
   }
-  const spans: SemanticSpanVisit[] = [];
   const drawings: SemanticDrawingVisit[] = [];
   for (const warning of layout.contentWarnings ?? [])
     work.report(`core-${warning.code}`, warning.code);
-  // An empty numbered paragraph still shows its number: its marker rides an empty span.
-  forEachSemanticSpan(
-    layout,
-    (visit) => {
-      work.tick();
-      spans.push(visit);
-    },
-    { spanlessMarkers: true }
-  );
   forEachSemanticDrawing(layout, (visit) => {
     work.tick();
     drawings.push(visit);
   });
-  forEachSemanticStory(layout, (root) => {
-    textStream(root.story, root.page.index).push(
-      ...decorations(
-        root.host.fragments,
-        root.origin.x - root.page.box.x,
-        root.origin.y - root.page.box.y,
-        pages[root.page.index]!,
-        work,
-        root.page.index,
-        layout.displayMode === 'all-markup' ? layout.revisionMarkup : undefined,
-        authorSlots
-      )
-    );
-  });
+  const storiesByPage = pages.map((): SemanticStoryVisit[] => []);
+  forEachSemanticStory(layout, (root) => storiesByPage[root.page.index]!.push(root));
   drawings.sort(
     (a, b) =>
       (a.drawing.kind === 'anchoredDrawing' ? a.drawing.relativeHeight : 0) -
@@ -558,6 +538,8 @@ export async function paint(
       member?: Commands;
     }
   >();
+  /** Each page's turned-cell keys, in the order the cells first took ink. */
+  const rotatedKeys = new Map<number, string[]>();
   const textboxBuffer = (page: number, key: object): Commands => {
     let owners = textboxBuffers.get(page);
     if (!owners) {
@@ -598,6 +580,9 @@ export async function paint(
           entry.member = textboxBuffer(visit.page.index, key);
         }
         rotatedBuffers.set(key, entry);
+        let keys = rotatedKeys.get(entry.page);
+        if (!keys) rotatedKeys.set(entry.page, (keys = []));
+        keys.push(key);
       }
       return entry.commands;
     }
@@ -618,30 +603,6 @@ export async function paint(
   // over the glyphs as if they were visual and reverse them, so a logical Arabic or Hebrew
   // line extracted scrambled or backwards. Without it they read each glyph's own ToUnicode
   // in visual order and reorder the line themselves, as they do for LibreOffice's PDFs.
-  const pageGroups = new Map<number, Map<object, SemanticSpanVisit[]>>();
-  for (const visit of spans) {
-    let lines = pageGroups.get(visit.page.index);
-    if (!lines) {
-      lines = new Map();
-      pageGroups.set(visit.page.index, lines);
-    }
-    let group = lines.get(visit.line);
-    if (!group) {
-      group = [];
-      lines.set(visit.line, group);
-    }
-    group.push(visit);
-  }
-  // The first span of each line, and whether that line keeps logical text per span.
-  const lineStarts = new Map<SemanticSpanVisit, boolean>();
-  spans.length = 0;
-  for (const lines of pageGroups.values())
-    for (const group of lines.values()) {
-      const rightToLeft = group.some((v) => (v.span.style.shaping?.level ?? 0) % 2 === 1);
-      group.sort((a, b) => a.absoluteBox.x - b.absoluteBox.x);
-      lineStarts.set(group[0]!, !rightToLeft);
-      for (const visit of group) spans.push(visit);
-    }
   let logicalText = false;
   /** Painted operators, with their logical text when the line keeps it. */
   const withActualText = (painted: string, logical: string): string =>
@@ -654,102 +615,131 @@ export async function paint(
     const outlines = text.takeOutlines();
     if (outlines && lineOut) lineOut.push(outlines);
   };
-  const markersByPage = new Map<number, Set<object>>();
-  for (let i = 0; i < spans.length; i++) {
-    if (i % 128 === 0) await work.yield();
-    const visit = spans[i]!,
-      page = pages[visit.page.index]!,
-      out = outFor(visit);
-    if (lineStarts.has(visit)) {
-      placeOutlines();
-      lineOut = out;
-      logicalText = lineStarts.get(visit)!;
-    }
-    let markers = markersByPage.get(visit.page.index);
-    if (!markers) {
-      markers = new Set();
-      markersByPage.set(visit.page.index, markers);
-    }
-    const marker = visit.paragraph.marker;
-    if (marker && !markers.has(visit.paragraph)) {
-      markers.add(visit.paragraph);
-      // A picture bullet replaces the marker glyph. Anything undrawable — missing, external,
-      // still decoding, refused, or a format this writer cannot embed — answers '' and the
-      // level's `w:lvlText` is painted instead, which is the same fall back Word shows.
-      const picture = marker.picture
-        ? await images.paintListMarkerPicture(
-            marker.picture,
-            {
-              ...marker.picture.box,
-              x: marker.picture.box.x + visit.storyOrigin.x - visit.page.box.x,
-              y: marker.picture.box.y + visit.storyOrigin.y - visit.page.box.y,
-            },
-            page,
-            visit.page.index
-          )
-        : '';
-      if (picture) out.push(picture);
-      else
-        // A right-to-left paragraph's marker comes as visual pieces, one per direction run.
-        for (const [index, piece] of (marker.pieces ?? [marker]).entries())
-          out.push(
-            // The trailing space keeps the marker apart from the text in extraction.
-            withActualText(
-              text.paint(
-                {
-                  ...visit,
-                  span: {
-                    ...visit.span,
-                    text: piece.text,
-                    style: piece.style,
-                    box: piece.box,
-                    link: undefined,
-                    revisions: undefined,
-                  },
-                  absoluteBox: {
-                    ...piece.box,
-                    x: piece.box.x + visit.storyOrigin.x,
-                    y: piece.box.y + visit.storyOrigin.y,
-                  },
-                },
-                page,
-                true
-              ),
-              piece.text + (index === (marker.pieces?.length ?? 1) - 1 ? ' ' : '')
-            )
-          );
-    }
-    const markup =
-      layout.displayMode === 'all-markup' && layout.revisionMarkup
-        ? spanMarkup(visit, layout.revisionMarkup, rowRevisions.get(visit.paragraph))
-        : null;
-    const fill =
-      markup && markup.background !== 'none'
-        ? markupBackground(markup.background, authorSlots.get(markup.author) ?? 0)
-        : (HIGHLIGHTS[visit.span.style.highlight ?? ''] ?? visit.span.style.shading);
-    if (fill)
-      out.push(
-        `${color(fill)} rg ${rect(text.bandBox(visit), -visit.page.box.x, -visit.page.box.y, pageHeight(page), true)} f`
-      );
-    const clipping = visit.paragraph.clipToBox;
-    if (clipping)
-      out.push(
-        `q ${rect(visit.paragraph.box, visit.storyOrigin.x - visit.page.box.x, visit.storyOrigin.y - visit.page.box.y, pageHeight(page))} W n`
-      );
-    out.push(
-      withActualText(
-        visit.span.equation ? paintEquation(visit, page, text, work) : text.paint(visit, page),
-        // Tabs and breaks paint no glyph, so they have no character in the region.
-        (visit.span.equation?.fallbackText ?? extractedText(visit.span)).replace(/[\t\n\r\f]/g, '')
-      )
+  let painted = 0;
+  /**
+   * Paint one page's spans, then its grouped character borders. Only this page's visits are
+   * alive while it paints, not the whole document's.
+   */
+  const paintPageText = async (record: PageRecord): Promise<void> => {
+    const lines = new Map<object, SemanticSpanVisit[]>();
+    // An empty numbered paragraph still shows its number: its marker rides an empty span.
+    forEachSemanticSpan(
+      layout,
+      (visit) => {
+        work.tick();
+        let group = lines.get(visit.line);
+        if (!group) {
+          group = [];
+          lines.set(visit.line, group);
+        }
+        group.push(visit);
+      },
+      { spanlessMarkers: true, page: record }
     );
-    if (clipping) out.push('Q');
-    linkAnnotation(doc, page, visit, names);
-  }
-  placeOutlines();
-  // Draw grouped character borders after highlights, which may otherwise cover an
-  // earlier run's edge. Geometry and grouping are shared with the screen painter.
-  for (const lines of pageGroups.values()) {
+    // The first span of each line, and whether that line keeps logical text per span.
+    const lineStarts = new Map<SemanticSpanVisit, boolean>();
+    const spans: SemanticSpanVisit[] = [];
+    for (const group of lines.values()) {
+      const rightToLeft = group.some((v) => (v.span.style.shaping?.level ?? 0) % 2 === 1);
+      group.sort((a, b) => a.absoluteBox.x - b.absoluteBox.x);
+      lineStarts.set(group[0]!, !rightToLeft);
+      for (const visit of group) spans.push(visit);
+    }
+    const markers = new Set<object>();
+    for (const visit of spans) {
+      if (painted++ % 128 === 0) await work.yield();
+      const page = pages[visit.page.index]!,
+        out = outFor(visit);
+      if (lineStarts.has(visit)) {
+        placeOutlines();
+        lineOut = out;
+        logicalText = lineStarts.get(visit)!;
+      }
+      const marker = visit.paragraph.marker;
+      if (marker && !markers.has(visit.paragraph)) {
+        markers.add(visit.paragraph);
+        // A picture bullet replaces the marker glyph. Anything undrawable — missing, external,
+        // still decoding, refused, or a format this writer cannot embed — answers '' and the
+        // level's `w:lvlText` is painted instead, which is the same fall back Word shows.
+        const picture = marker.picture
+          ? await images.paintListMarkerPicture(
+              marker.picture,
+              {
+                ...marker.picture.box,
+                x: marker.picture.box.x + visit.storyOrigin.x - visit.page.box.x,
+                y: marker.picture.box.y + visit.storyOrigin.y - visit.page.box.y,
+              },
+              page,
+              visit.page.index
+            )
+          : '';
+        if (picture) out.push(picture);
+        else
+          // A right-to-left paragraph's marker comes as visual pieces, one per direction run.
+          for (const [index, piece] of (marker.pieces ?? [marker]).entries())
+            out.push(
+              // The trailing space keeps the marker apart from the text in extraction.
+              withActualText(
+                text.paint(
+                  {
+                    ...visit,
+                    span: {
+                      ...visit.span,
+                      text: piece.text,
+                      style: piece.style,
+                      box: piece.box,
+                      link: undefined,
+                      revisions: undefined,
+                    },
+                    absoluteBox: {
+                      ...piece.box,
+                      x: piece.box.x + visit.storyOrigin.x,
+                      y: piece.box.y + visit.storyOrigin.y,
+                    },
+                  },
+                  page,
+                  true
+                ),
+                piece.text + (index === (marker.pieces?.length ?? 1) - 1 ? ' ' : '')
+              )
+            );
+      }
+      const markup =
+        layout.displayMode === 'all-markup' && layout.revisionMarkup
+          ? spanMarkup(visit, layout.revisionMarkup, rowRevisions.get(visit.paragraph))
+          : null;
+      const fill =
+        markup && markup.background !== 'none'
+          ? markupBackground(markup.background, authorSlots.get(markup.author) ?? 0)
+          : (HIGHLIGHTS[visit.span.style.highlight ?? ''] ?? visit.span.style.shading);
+      if (fill)
+        out.push(
+          `${color(fill)} rg ${rect(text.bandBox(visit), -visit.page.box.x, -visit.page.box.y, pageHeight(page), true)} f`
+        );
+      const clipping = visit.paragraph.clipToBox;
+      if (clipping)
+        out.push(
+          `q ${rect(visit.paragraph.box, visit.storyOrigin.x - visit.page.box.x, visit.storyOrigin.y - visit.page.box.y, pageHeight(page))} W n`
+        );
+      out.push(
+        withActualText(
+          visit.span.equation ? paintEquation(visit, page, text, work) : text.paint(visit, page),
+          // Tabs and breaks paint no glyph, so they have no character in the region.
+          (visit.span.equation?.fallbackText ?? extractedText(visit.span)).replace(
+            /[\t\n\r\f]/g,
+            ''
+          )
+        )
+      );
+      if (clipping) out.push('Q');
+      linkAnnotation(doc, page, visit, names);
+    }
+    // The page's last line takes its outline glyphs before the page is finished.
+    placeOutlines();
+    lineOut = undefined;
+    // Draw grouped character borders after highlights, which may otherwise cover an
+    // earlier run's edge. Geometry and grouping are shared with the screen painter.
+    work.reportPhase(2);
     for (const group of lines.values()) {
       const visit = group[0]!;
       const strokes = runBorderStrokesForLine(visit.line);
@@ -771,7 +761,78 @@ export async function paint(
       }
       if (visit.paragraph.clipToBox) out.push('Q');
     }
+  };
+  const layers = [backBorders, furnitureBehind, furniture, behindStreams, streams];
+  /**
+   * Close a page: its turned cells, then the front page border, then every layer as one
+   * compressed content stream. The page's commands are released; the stream is registered
+   * later, in page order, so the PDF's object numbers do not depend on when a page closes.
+   */
+  const finishPage = (index: number): PDFRawStream => {
+    const height = pageHeight(pages[index]!);
+    // Each turned cell's ink turns as one: behind-text drawings under the page's text, the
+    // text and in-front drawings over it, both under the same matrix.
+    for (const key of rotatedKeys.get(index) ?? []) {
+      const entry = rotatedBuffers.get(key);
+      if (!entry) continue;
+      const { cell, x, y, rootStory, commands, behind } = entry;
+      const matrix = rotatedCellMatrix(cell.box, x, y, height);
+      if (behind.length) behindStream(rootStory, index).push('q', matrix, ...behind, 'Q');
+      if (commands.length) textStream(rootStory, index).push('q', matrix, ...commands, 'Q');
+      rotatedBuffers.delete(key);
+    }
+    rotatedKeys.delete(index);
+    textboxBuffers.delete(index);
+    // `w:zOrder="front"` puts the page frame over EVERYTHING on the page, in-front drawings
+    // included, so it goes into the stream after them, not before.
+    streams[index]!.push(...frontBorders[index]!);
+    work.check();
+    const content = flateStream(
+      doc.context,
+      layers.map((layer) => layer[index]!.join('\n')).join('\n')
+    );
+    for (const layer of [...layers, frontBorders]) layer[index]!.length = 0;
+    return content;
+  };
+  // Pages are painted one at a time: decorations, text, then character borders. Reports are
+  // held in one bucket per phase, so diagnostics keep the order a phase-by-phase pass over
+  // the whole document gives them.
+  //
+  // A page without drawings is complete after its text, so it closes at once and its
+  // commands are released. A page with drawings waits for the drawing pass, which runs over
+  // the whole document after all text, because pictures and their resources join the PDF in
+  // that order. Its commands are joined per layer meanwhile, which keeps the same text.
+  const waiting = new Set(drawings.map((visit) => visit.page.index));
+  const contents: PDFRawStream[] = [];
+  work.holdReports(3);
+  for (const record of layout.pages) {
+    work.reportPhase(0);
+    for (const root of storiesByPage[record.index]!)
+      textStream(root.story, record.index).push(
+        ...decorations(
+          root.host.fragments,
+          root.origin.x - root.page.box.x,
+          root.origin.y - root.page.box.y,
+          pages[record.index]!,
+          work,
+          record.index,
+          layout.displayMode === 'all-markup' ? layout.revisionMarkup : undefined,
+          authorSlots
+        )
+      );
+    storiesByPage[record.index] = [];
+    work.reportPhase(1);
+    await paintPageText(record);
+    if (!waiting.has(record.index)) contents[record.index] = finishPage(record.index);
+    else
+      for (const layer of [...layers, frontBorders]) {
+        const commands = layer[record.index]!;
+        if (commands.length < 2) continue;
+        commands[0] = commands.join('\n');
+        commands.length = 1;
+      }
   }
+  work.releaseReports();
   // A group's text box members: the group's own picture and shapes, then each member's
   // decorations and text, clipped to that member's content box and turned with the member,
   // all inside the group's paint bounds — the same boxes the screen painter clips to.
@@ -892,28 +953,10 @@ export async function paint(
       : textStream(visit.rootStory, visit.page.index)
     ).push(commands);
   }
-  // Each rotated cell's ink turns as one: behind-text drawings under the page's text, the
-  // text and in-front drawings over it, both under the same matrix.
-  for (const { cell, x, y, page, rootStory, commands, behind } of rotatedBuffers.values()) {
-    const matrix = rotatedCellMatrix(cell.box, x, y, pageHeight(pages[page]!));
-    if (behind.length) behindStream(rootStory, page).push('q', matrix, ...behind, 'Q');
-    if (commands.length) textStream(rootStory, page).push('q', matrix, ...commands, 'Q');
-  }
-  // `w:zOrder="front"` puts the page frame over EVERYTHING on the page, in-front drawings
-  // included, so it goes into the stream after them, not before.
-  for (let i = 0; i < streams.length; i++) streams[i]!.push(...frontBorders[i]!);
+  for (const index of [...waiting].sort((a, b) => a - b)) contents[index] = finishPage(index);
   for (let i = 0; i < pages.length; i++) {
     work.check();
-    pages[i]!.node.addContentStream(
-      doc.context.register(
-        flateStream(
-          doc.context,
-          [backBorders, furnitureBehind, furniture, behindStreams, streams]
-            .map((layer) => layer[i]!.join('\n'))
-            .join('\n')
-        )
-      )
-    );
+    pages[i]!.node.addContentStream(doc.context.register(contents[i]!));
   }
   for (const face of text.faces.values()) await face.finish(work);
   if (includeComments) comments(doc, pages, layout, work);
