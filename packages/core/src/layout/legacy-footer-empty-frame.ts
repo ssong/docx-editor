@@ -8,6 +8,7 @@ import { paragraphSpacing } from './paragraph-style.ts';
 import { readLegacyPageField } from './legacy-footer-page-field.ts';
 import { shiftParagraphFragment } from './note-fragment-geometry.ts';
 import type { BlockFragmentRecord, ParagraphFragmentRecord } from './semantic-records.ts';
+import { withBox } from './compact-box.ts';
 
 const isElement = (node: OoxmlNode): node is OoxmlElement => node.kind !== 'textValue';
 const isW = (node: OoxmlNode, name: string): boolean =>
@@ -170,7 +171,7 @@ export function positionEmptyFooterPageFrame<
         contentX: movedLine.contentX + dx,
         spans: movedLine.spans.map((span) => ({
           ...span,
-          box: { ...span.box, x: span.box.x + dx },
+          box: withBox(span.box, { x: span.box.x + dx }),
         })),
       },
     ],

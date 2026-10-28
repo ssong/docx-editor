@@ -10,6 +10,7 @@ import { positionFixedFooterPageFrame } from './legacy-footer-fixed-frame.ts';
 import { positionEmptyFooterPageFrame } from './legacy-footer-empty-frame.ts';
 import { positionRightFooterPageFrame } from './legacy-footer-right-frame.ts';
 import type { BlockFragmentRecord, ParagraphFragmentRecord } from './semantic-records.ts';
+import { withBox } from './compact-box.ts';
 
 const isElement = (node: OoxmlNode): node is OoxmlElement => node.kind !== 'textValue';
 const isW = (node: OoxmlNode, name: string): boolean =>
@@ -205,7 +206,10 @@ export function positionLegacyFooterPageFrame<
         ...line,
         box: { ...line.box, x: left + dx, width: right - left },
         contentX: line.contentX + dx,
-        spans: line.spans.map((span) => ({ ...span, box: { ...span.box, x: span.box.x + dx } })),
+        spans: line.spans.map((span) => ({
+          ...span,
+          box: withBox(span.box, { x: span.box.x + dx }),
+        })),
       },
     ],
   };

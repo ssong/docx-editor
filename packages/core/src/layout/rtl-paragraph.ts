@@ -12,6 +12,7 @@ import type { StyleSpanRecord, TextMeasurer } from './semantic-records.ts';
 import { measureDisplayText } from './run-style.ts';
 import { styleForFontSlot } from './script-itemization.ts';
 import { MAX_SHAPING_CONTEXT, type ShapingContext } from './shaped-run.ts';
+import { withBox } from './compact-box.ts';
 
 export function paragraphIsRtl(props: readonly OoxmlProperty[]): boolean {
   let rtl = false;
@@ -736,7 +737,7 @@ export function reorderBidiSpans(
             },
           }
         : span.style,
-      box: { ...span.box, x, width: advances[index]! },
+      box: withBox(span.box, { x, width: advances[index]! }),
     };
     x += advances[index]!;
   }
@@ -785,7 +786,7 @@ export function splitBidiTrailingWhitespace(
       ...span,
       text: span.text.slice(0, from),
       range: { ...span.range, end: span.range.start + from },
-      box: { ...span.box, width: span.box.width - width },
+      box: withBox(span.box, { width: span.box.width - width }),
     };
     // The tail sits right after the text, so a float's jump stays on the text piece only.
     const { wrapAdvanceBefore: _jump, ...rest } = span;
@@ -793,7 +794,7 @@ export function splitBidiTrailingWhitespace(
       ...rest,
       text: tail,
       range: { ...span.range, start: span.range.start + from },
-      box: { ...span.box, x: span.box.x + span.box.width - width, width },
+      box: withBox(span.box, { x: span.box.x + span.box.width - width, width }),
     };
     return [...spans.slice(0, index), textSpan, tailSpan, ...spans.slice(index + 1)];
   }

@@ -24,6 +24,7 @@ const { values, positionals } = parseArgs({
     root: { type: 'string' },
     measurer: { type: 'string', default: 'fixed' },
     synthetic: { type: 'string' },
+    'export-options': { type: 'string' },
   },
 });
 const root = resolve(values.root ?? join(import.meta.dirname, '../..'));
@@ -36,10 +37,14 @@ const bytes = values.synthetic
   ? syntheticDocx(Number(values.synthetic))
   : new Uint8Array(readFileSync(positionals[0]));
 
+// Extra session options, such as a layout option under test. An engine that does not know
+// an option ignores it.
+const extraOptions = values['export-options'] ? JSON.parse(values['export-options']) : {};
+
 async function openSession() {
   if (values.measurer === 'fixed') {
     // The engine's fixed measurer: no fonts, so the result depends on layout code alone.
-    return exporter.openDocumentForExport(bytes, { reuseAcrossRevisions: false });
+    return exporter.openDocumentForExport(bytes, { ...extraOptions, reuseAcrossRevisions: false });
   }
   if (values.measurer !== 'shaped') throw new Error('--measurer takes fixed or shaped');
   // HarfBuzz over the packaged metric-compatible faces, the same origin the PDF exporter
@@ -52,7 +57,7 @@ async function openSession() {
       maxBytes: layoutApi.HARD_MAX_FONT_BYTES,
     }),
   });
-  return exporter.openFontBackedDocumentForExport(bytes, { fonts: packaged });
+  return exporter.openFontBackedDocumentForExport(bytes, { ...extraOptions, fonts: packaged });
 }
 
 const opened = await openSession();

@@ -10,6 +10,7 @@ import type { InlineDrawingLayoutContext } from './drawing-layout.ts';
 import { paragraphIsRtl } from './rtl-paragraph.ts';
 import type { LineRecord, ParagraphFragmentRecord, TextMeasurer } from './semantic-records.ts';
 import type { ParagraphLayoutInputs, StyleCascadeTable } from './style-cascade.ts';
+import { withBox } from './compact-box.ts';
 
 function ignoredFrameMeasureIsValid(raw: string | undefined, signed: boolean): boolean {
   if (raw === undefined) return true;
@@ -204,7 +205,10 @@ export function alignDropCap(
       lines: fragment.lines.map((line) => ({
         ...line,
         baseline: line.baseline + delta,
-        spans: line.spans.map((span) => ({ ...span, box: { ...span.box, y: span.box.y + delta } })),
+        spans: line.spans.map((span) => ({
+          ...span,
+          box: withBox(span.box, { y: span.box.y + delta }),
+        })),
       })),
     },
   };

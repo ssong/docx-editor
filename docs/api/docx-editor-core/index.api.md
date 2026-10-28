@@ -1630,6 +1630,7 @@ export interface DocxDocumentJSON {
 export interface DocxEditorConfig {
     // (undocumented)
     author?: string;
+    compactLayoutBoxes?: boolean;
     container?: HTMLElement;
     contentLockPolicy?: ContentLockPolicy;
     document?: DocumentSource;

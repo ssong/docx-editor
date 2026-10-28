@@ -12,6 +12,7 @@ import { topAndBottomSkipBeforeLine, type ExclusionZone } from './drawing-exclus
 import type { ModelRange } from './field-pieces.ts';
 import type { WrapSegment } from './line-wrap-passages.ts';
 import type { ParagraphLayoutCache } from './layout-cache.ts';
+import { compactBox, withBox } from './compact-box.ts';
 import { PAGE_BREAK_CHAR } from '@docx-editor.dev/core/store';
 
 export interface PendingLine {
@@ -206,7 +207,7 @@ export function placeLeadingIgnoredBreaks(line: PendingLine, pageBreaksIgnored: 
   if (x === undefined) return;
   for (let index = 0; line.spans[index]?.text === PAGE_BREAK_CHAR; index += 1) {
     const span = line.spans[index]!;
-    if (span.range.start < start) line.spans[index] = { ...span, box: { ...span.box, x } };
+    if (span.range.start < start) line.spans[index] = { ...span, box: withBox(span.box, { x }) };
   }
 }
 
@@ -385,7 +386,7 @@ export function coalesceIdeographicSpans(line: PendingLine): void {
       ...first,
       range: { ...first.range, end: line.spans[groupEnd]!.range.end },
       text: parts.join(''),
-      box: { ...first.box, width },
+      box: withBox(first.box, { width }),
     });
     index = groupEnd + 1;
   }
@@ -447,14 +448,36 @@ export function cacheBrokenLines(
   cacheKey: string,
   lines: readonly PendingLine[]
 ): readonly PendingLine[] {
-  const entry = cache.retainAcrossPasses === false ? lines : lines.map(frozenLine);
+  const compact = cache.compactBoxes === true;
+  if (cache.retainAcrossPasses === false) {
+    if (compact) for (const line of lines) compactLineSpans(line);
+    cache.set(cacheKey, lines);
+    return lines;
+  }
+  const entry = lines.map((line) => frozenLine(line, compact));
   cache.set(cacheKey, entry);
   return entry;
 }
 
-/** Freeze a broken span and its box in place: the cache and the published line share it. */
-function frozenSpan(span: StyleSpanRecord): StyleSpanRecord {
+/**
+ * Round a closed line's span boxes to the compact grid, once, before placement reads them.
+ * Breaking is over, so no measure or break decision sees the rounded values.
+ */
+function compactLineSpans(line: PendingLine): void {
+  for (let index = 0; index < line.spans.length; index += 1) {
+    const span = line.spans[index]!;
+    const box = compactBox(span.box);
+    if (box !== span.box) line.spans[index] = { ...span, box };
+  }
+}
+
+/**
+ * Freeze a broken span and its box in place: the cache and the published line share it.
+ * With `compact`, the box is first rounded to the compact grid ({@link compactBox}).
+ */
+function frozenSpan(span: StyleSpanRecord, compact: boolean): StyleSpanRecord {
   if (Object.isFrozen(span)) return span;
+  if (compact) (span as { box: StyleSpanRecord['box'] }).box = compactBox(span.box);
   Object.freeze(span.box);
   return Object.freeze(span);
 }
@@ -469,9 +492,9 @@ function frozenSpan(span: StyleSpanRecord): StyleSpanRecord {
  * The spans are frozen in place, not copied: placement publishes a span that keeps its x as
  * the same object ({@link placeLineSpans}), so the cache and the laid-out page hold one copy.
  */
-export function frozenLine(line: PendingLine): PendingLine {
+export function frozenLine(line: PendingLine, compact = false): PendingLine {
   return Object.freeze({
-    spans: Object.freeze(line.spans.map(frozenSpan)) as StyleSpanRecord[],
+    spans: Object.freeze(line.spans.map((span) => frozenSpan(span, compact))) as StyleSpanRecord[],
     drawings: line.drawings.map((drawing) =>
       Object.freeze({
         ...drawing,
@@ -533,7 +556,7 @@ export function placeLineSpans(
     placed.push({
       ...span,
       range: sameParagraph ? span.range : { ...span.range, paragraphId },
-      box: penX === 0 ? span.box : { ...span.box, x: span.box.x + penX },
+      box: penX === 0 ? span.box : withBox(span.box, { x: span.box.x + penX }),
     });
   }
   return placed ?? spans;

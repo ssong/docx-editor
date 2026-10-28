@@ -2770,6 +2770,7 @@ export interface ParagraphKeyInputs {
 export interface ParagraphLayoutCache<T> {
     // (undocumented)
     clear(): void;
+    readonly compactBoxes?: boolean;
     // (undocumented)
     get(key: ParagraphLayoutKey): T | undefined;
     keyFor?(inputs: ParagraphKeyInputs): ParagraphLayoutKey;
@@ -2785,6 +2786,7 @@ export interface ParagraphLayoutCache<T> {
 
 // @public
 export interface ParagraphLayoutCacheOptions {
+    readonly compactBoxes?: boolean;
     readonly maxEntries?: number;
     readonly retainAcrossPasses?: boolean;
 }

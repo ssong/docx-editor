@@ -25,6 +25,7 @@ const { values } = parseArgs({
     tolerance: { type: 'string', default: '0' },
     spans: { type: 'string', default: 'exact' },
     markdown: { type: 'string' },
+    'head-options': { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -44,6 +45,9 @@ Options:
   --tolerance <pt>    allowed position difference in points (default: 0, exact)
   --spans <mode>      exact or merged (default: exact)
   --markdown <file>   also write the report as Markdown
+  --head-options <json>
+                      extra export session options for this checkout only, for example
+                      '{"compactLayoutBoxes":true}' to check a layout option against the base
 
 Exit code 0 when the layout matches, 1 when it differs.`);
   process.exit(0);
@@ -94,7 +98,8 @@ const run = join(here, 'run.mjs');
 const baseOut = join(work, 'out-base');
 const headOut = join(work, 'out-head');
 sh(process.execPath, [run, '--root', baseRoot, '--out', baseOut, ...runArgs], repo);
-sh(process.execPath, [run, '--root', repo, '--out', headOut, ...runArgs], repo);
+const headArgs = values['head-options'] ? ['--export-options', values['head-options']] : [];
+sh(process.execPath, [run, '--root', repo, '--out', headOut, ...runArgs, ...headArgs], repo);
 
 const compareArgs = ['--tolerance', values.tolerance, '--spans', values.spans];
 if (values.markdown) compareArgs.push('--markdown', resolve(values.markdown));

@@ -172,6 +172,14 @@ export interface DocxEditorConfig {
    * does. Fixed for the instance.
    */
   lockedControlNavigation?: LockedControlNavigation;
+  /**
+   * Publish span boxes that store their coordinates as small integers, to save memory.
+   *
+   * Coordinates are rounded to 1/20000 pt. A compact box reads like any `LayoutBox`, but an
+   * object spread (`{ ...span.box }`) copies none of its coordinates: read the fields instead.
+   * Default false. Fixed for the instance. Experimental: the default may change.
+   */
+  compactLayoutBoxes?: boolean;
   /** Override raster decode for insert/replace image commands; defaults to browser/headless. */
   imageDecodePort?: import('../store/package/image-resources.ts').ImageDecodePort;
   /**

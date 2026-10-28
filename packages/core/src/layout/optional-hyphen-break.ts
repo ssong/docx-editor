@@ -12,6 +12,7 @@ import { joiningCutDelta, trimJoiningAtHyphen } from './optional-hyphen-joining.
 import { styleForFontSlot } from './script-itemization.ts';
 import type { StyleSpanRecord, TextMeasurer } from './semantic-records.ts';
 import { carryPartialWord, type WordCarryContext, type WordStart } from './word-carry.ts';
+import { withBox } from './compact-box.ts';
 
 /** How an optional hyphen lays out: U+00AD with no advance. */
 const OPTIONAL_HYPHEN_GLYPH = '\u00ad';
@@ -90,7 +91,7 @@ export function showOptionalHyphenAtLineEnd(line: PendingLine, measurer: TextMea
   const width = visibleHyphenWidth(last, measurer);
   line.spans[line.spans.length - 1] = {
     ...last,
-    box: { ...last.box, width },
+    box: withBox(last.box, { width }),
     optionalHyphenBreak: true,
   };
   line.width += width - last.box.width;

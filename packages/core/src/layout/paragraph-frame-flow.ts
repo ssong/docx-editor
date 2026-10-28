@@ -10,6 +10,7 @@ import {
 } from './paragraph-frame.ts';
 import { fragmentSignature } from './semantic-fragment-signature.ts';
 import type { LineRecord, ParagraphFragmentRecord } from './semantic-records.ts';
+import { withBox } from './compact-box.ts';
 
 function shiftFragmentX(
   fragment: ParagraphFragmentRecord,
@@ -40,7 +41,10 @@ function shiftFragmentX(
       ...line,
       box: { ...line.box, width },
       contentX: line.contentX + dx,
-      spans: line.spans.map((span) => ({ ...span, box: move(span.box) })),
+      spans: line.spans.map((span) => ({
+        ...span,
+        box: withBox(span.box, { x: span.box.x + dx }),
+      })),
       ...(line.drawings
         ? { drawings: line.drawings.map((drawing) => shiftInlineDrawingRecord(drawing, dx, 0)) }
         : {}),

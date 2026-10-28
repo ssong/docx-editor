@@ -32,6 +32,7 @@ const { values } = parseArgs({
     compare: { type: 'string' },
     'no-build': { type: 'boolean', default: false },
     chromium: { type: 'string', default: process.env.MEMORY_BENCH_CHROMIUM },
+    'layout-options': { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -55,6 +56,9 @@ Options:
   --no-build            reuse the built benchmark page
   --chromium <path>     Chromium executable (default: Playwright's own, or
                         the MEMORY_BENCH_CHROMIUM environment variable)
+  --layout-options <json>
+                        options for the export session and the editor, for example
+                        '{"compactLayoutBoxes":true}'
 
 Build the packages first: bun run --filter '@docx-editor.dev/i18n' build &&
 bun run --filter '@docx-editor.dev/core' build && bun run --filter '@docx-editor.dev/fonts' build`);
@@ -62,6 +66,7 @@ bun run --filter '@docx-editor.dev/core' build && bun run --filter '@docx-editor
 }
 
 const runs = Number(values.runs);
+const layoutOptions = values['layout-options'] ? JSON.parse(values['layout-options']) : {};
 const targets = values.target === 'all' ? ['server', 'browser'] : [values.target];
 if (!targets.every((t) => t === 'server' || t === 'browser')) {
   throw new Error('--target takes all, server, or browser');
@@ -123,7 +128,15 @@ function serverProbe(doc) {
   return new Promise((done, fail) => {
     const child = spawn(
       process.execPath,
-      ['--expose-gc', join(here, 'server-probe.mjs'), doc.path, '--edits', values['server-edits']],
+      [
+        '--expose-gc',
+        join(here, 'server-probe.mjs'),
+        doc.path,
+        '--edits',
+        values['server-edits'],
+        '--layout-options',
+        JSON.stringify(layoutOptions),
+      ],
       { cwd: root, stdio: ['ignore', 'pipe', 'inherit'] }
     );
     let out = '';
@@ -238,8 +251,8 @@ async function browserRun(chromium, origin, doc) {
       base = stages.at(-1).heapUsedMb;
     }
     const opened = await page.evaluate(
-      (url) => window.__memoryBench.open(url),
-      `/docs/${doc.name}.docx`
+      ([url, options]) => window.__memoryBench.open(url, options),
+      [`/docs/${doc.name}.docx`, layoutOptions]
     );
     await measure('open', opened.ms);
     const scrolled = await page.evaluate(() => window.__memoryBench.scrollThrough());
@@ -312,6 +325,7 @@ const report = {
     fonts: values.fonts,
     serverEdits: Number(values['server-edits']),
     browserEdits: Number(values['browser-edits']),
+    layoutOptions,
   },
   documents: documents.map(({ path, ...doc }) => doc),
 };

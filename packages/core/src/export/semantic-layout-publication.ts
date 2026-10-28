@@ -1,5 +1,6 @@
 // Runtime immutability boundary for semantic records handed to exporter consumers.
 
+import { isCompactBox } from '../layout/compact-box.ts';
 import type { SemanticLayout } from '../layout/semantic-records.ts';
 
 /**
@@ -45,6 +46,12 @@ function freezePublishedValue(
       return;
     }
 
+    // A compact box is the one class layout publishes. Its coordinates are private fields that
+    // nothing can write, and its class and prototype are frozen, so it is immutable data too.
+    if (isCompactBox(value)) {
+      Object.freeze(value);
+      return;
+    }
     // Semantic records are plain data. Fail closed if that contract evolves: silently exposing a
     // mutable Map, typed array, class, or accessor would reopen cross-exporter cache poisoning.
     if (!isPlainRecord(value)) {

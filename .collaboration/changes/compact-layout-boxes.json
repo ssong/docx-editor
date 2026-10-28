@@ -1,0 +1,13 @@
+{
+  "impact": "no-impact",
+  "fields": [],
+  "before": "Each published text span box was a plain object literal with fractional point coordinates.",
+  "after": "With the experimental compactLayoutBoxes option on, a span box stores its coordinates as integer units of 1/20000 pt and reads them back as points through getters. With the option off, which is the default, span boxes are as before.",
+  "reason": "The option only changes how a laid-out span box holds its coordinates in memory. Layout is computed per client from the shared document, and span boxes are never written to the shared document, operations, snapshots, or awareness payloads, so no shared field or operation changes. The option is off by default and is a local editor setting.",
+  "tests": [
+    "packages/core/src/layout/__tests__/compact-box.test.ts",
+    "packages/core/src/editor/__tests__/paginated-surface-layout.test.ts"
+  ],
+  "changeset": "compact-span-boxes",
+  "migration": null
+}
