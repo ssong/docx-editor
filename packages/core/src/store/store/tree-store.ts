@@ -6,7 +6,7 @@ import {
   type HistoryChunkSource,
   type HistoryEntry,
 } from './history-snapshot.ts';
-import { reportHistoryGroup, type HistoryGroup } from './history-group.ts';
+import { reportHistoryGroup } from './history-group.ts';
 import { withFieldResultsMode } from '../package/field-result-mode.ts';
 import type { TransactOptions, TreeDocumentStoreOptions } from './tree-store-options.ts';
 export type { TransactOptions, TreeDocumentStoreOptions } from './tree-store-options.ts';
