@@ -9,7 +9,11 @@ export function configSurfaceOptions(
   config: DocxEditorConfig
 ): Pick<
   PaginatedSurfaceOptions,
-  'tableInteractionLabel' | 'imageDecodePort' | 'lockedControlNavigation' | 'layoutSpans'
+  | 'tableInteractionLabel'
+  | 'imageDecodePort'
+  | 'lockedControlNavigation'
+  | 'layoutSpans'
+  | 'compactLayoutBoxes'
 > {
   return {
     ...(config.tableInteractionLabel
@@ -18,5 +22,6 @@ export function configSurfaceOptions(
     ...(config.imageDecodePort ? { imageDecodePort: config.imageDecodePort } : {}),
     ...(config.lockedControlNavigation === 'atomic' ? { lockedControlNavigation: 'atomic' } : {}),
     ...(config.layoutSpans === 'run' ? { layoutSpans: 'run' } : {}),
+    ...(config.compactLayoutBoxes ? { compactLayoutBoxes: true } : {}),
   };
 }

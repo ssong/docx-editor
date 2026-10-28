@@ -10,6 +10,7 @@ import type { PendingLine } from './pending-line.ts';
 import { displayText, type ResolvedRunStyle } from './run-style.ts';
 import { styleForFontSlot, type FontSlot } from './script-itemization.ts';
 import type { StyleSpanRecord, TextMeasurer } from './semantic-records.ts';
+import { withBox } from './compact-box.ts';
 
 const OPTIONAL_HYPHEN_GLYPH = '\u00ad';
 
@@ -75,10 +76,10 @@ export function trimJoiningAtHyphen(
   if (!span || !style) return;
   const width = measuredWidth(span.text, style, span.fontSlot, measurer);
   const delta = width - span.box.width;
-  line.spans[index] = { ...span, style, box: { ...span.box, width } };
+  line.spans[index] = { ...span, style, box: withBox(span.box, { width }) };
   for (let after = index + 1; after < line.spans.length; after += 1) {
     const moved = line.spans[after]!;
-    line.spans[after] = { ...moved, box: { ...moved.box, x: moved.box.x + delta } };
+    line.spans[after] = { ...moved, box: withBox(moved.box, { x: moved.box.x + delta }) };
   }
   line.width += delta;
 }

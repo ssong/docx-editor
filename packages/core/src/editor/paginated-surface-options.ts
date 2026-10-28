@@ -160,6 +160,8 @@ export interface PaginatedSurfaceOptions {
   readonly pointer?: 'engine' | 'native';
   /** How the caret moves through a content-locked inline control; see `LockedControlNavigation`. */
   readonly lockedControlNavigation?: LockedControlNavigation;
+  /** Publish compact span boxes; see `DocxEditorConfig.compactLayoutBoxes`. */
+  readonly compactLayoutBoxes?: boolean;
   readonly onChange?: (state: PaginatedSurfaceState) => void;
   /**
    * Told each time an edit is refused, with the raw reason: a store code such as `'locked'`,

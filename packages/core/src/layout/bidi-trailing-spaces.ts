@@ -3,6 +3,7 @@ import { PAGE_BREAK_CHAR } from '@docx-editor.dev/core/store';
 import { isCollapsibleLineEndWhitespace } from './line-end-whitespace.ts';
 import { reorderBidiSpans } from './rtl-paragraph.ts';
 import type { StyleSpanRecord } from './semantic-records.ts';
+import { withBox } from './compact-box.ts';
 
 const EDGE_TOLERANCE_PT = 1e-6;
 
@@ -133,7 +134,7 @@ export function alignBidiTrailingSpaces(
   const moved = end(aligned[count - 1]!) - end(content[from - 1]!);
   const spaces = split
     .slice(from)
-    .map((span) => ({ ...span, box: { ...span.box, x: span.box.x + moved } }));
+    .map((span) => ({ ...span, box: withBox(span.box, { x: span.box.x + moved }) }));
   const reordered = reorderBidiSpans([...aligned, ...spaces], paragraphRtl, pageBreaksIgnored);
   // Spaces that take room stand in the block reordering lays out from the aligned start.
   if (!hangs) return reordered;
@@ -161,11 +162,11 @@ export function alignBidiTrailingSpaces(
   return reordered.map((span, index) => {
     if (index < passageStart) return span;
     const x = span.box.x + shift;
-    if (index < count) return shift === 0 ? span : { ...span, box: { ...span.box, x } };
+    if (index < count) return shift === 0 ? span : { ...span, box: withBox(span.box, { x }) };
     const start = clip(x);
     const width = Math.max(0, clip(x + span.box.width) - start);
     if (start === span.box.x && width === span.box.width) return span;
-    const placed = { ...span, box: { ...span.box, x: start, width } };
+    const placed = { ...span, box: withBox(span.box, { x: start, width }) };
     // Paint clips a space's ink to its box only when the span says it hangs.
     return width < span.box.width && isCollapsibleLineEndWhitespace(span.text)
       ? { ...placed, lineEndWhitespace: true as const }

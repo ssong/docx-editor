@@ -15,6 +15,7 @@ import {
   layoutDerivedSpacingStyleForEditing,
   withLayoutDerivedSpacing,
 } from './layout-derived-spacing.ts';
+import { withBox } from './compact-box.ts';
 
 const OPENING = /^[〈《「『【〔〖〘〚（［｛]$/u;
 const CLOSING = /^[、。〉》」』】〕〗〙〛），．］｝]$/u;
@@ -286,7 +287,7 @@ function cellsOf(
             start: span.range.start + cluster.utf16From,
             end: span.range.start + cluster.utf16To,
           },
-          box: { ...span.box, x: span.box.x + previous, width },
+          box: withBox(span.box, { x: span.box.x + previous, width }),
         },
       });
       previous = end;
@@ -528,7 +529,7 @@ function fitCjkOptically(
             glyphOffsetPt: (source.glyphOffsetPt ?? 0) + cell.shift,
           }
         : {}),
-      box: { ...source.box, x, width: source.box.width - cell.reduction },
+      box: withBox(source.box, { x, width: source.box.width - cell.reduction }),
     };
     x += span.box.width;
     if (cell.sourceIndex < sourceCount) {
@@ -745,7 +746,7 @@ export function appendOpticalCjkCandidate(
       range: fragment.range,
       style: fragment.style,
       glyphOffsetPt: fragment.glyphOffsetPt,
-      box: { ...span.box, x, width: fragment.box.width },
+      box: withBox(span.box, { x, width: fragment.box.width }),
     });
     x += fragment.box.width;
   }

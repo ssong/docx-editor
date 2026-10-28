@@ -713,6 +713,7 @@ export function openDocumentForExport(source: ExportDocumentSource, options?: Op
 
 // @public
 export interface OpenDocumentForExportOptions {
+    readonly compactLayoutBoxes?: boolean;
     readonly convertPreservedImage?: PreservedImageConverter;
     readonly displayMode?: ReviewDisplayMode;
     readonly imageDecodePort?: ImageDecodePort;

@@ -21,6 +21,7 @@ const { values, positionals } = parseArgs({
   options: {
     edits: { type: 'string', default: '200' },
     'layout-spans': { type: 'string', default: 'word' },
+    'layout-options': { type: 'string', default: '{}' },
   },
 });
 const file = positionals[0];
@@ -81,6 +82,7 @@ let session = null;
 let pages = 0;
 await stage('layout', async () => {
   const result = exporter.openDocumentForExport(opened, {
+    ...JSON.parse(values['layout-options']),
     reuseAcrossRevisions: false,
     spans: values['layout-spans'],
   });

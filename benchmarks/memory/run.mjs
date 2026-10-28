@@ -33,6 +33,7 @@ const { values } = parseArgs({
     compare: { type: 'string' },
     'no-build': { type: 'boolean', default: false },
     chromium: { type: 'string', default: process.env.MEMORY_BENCH_CHROMIUM },
+    'layout-options': { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -58,6 +59,9 @@ Options:
   --no-build            reuse the built benchmark page
   --chromium <path>     Chromium executable (default: Playwright's own, or
                         the MEMORY_BENCH_CHROMIUM environment variable)
+  --layout-options <json>
+                        options for the export session and the editor, for example
+                        '{"compactLayoutBoxes":true}'
 
 Build the packages first: bun run --filter '@docx-editor.dev/i18n' build &&
 bun run --filter '@docx-editor.dev/core' build && bun run --filter '@docx-editor.dev/fonts' build.
@@ -66,6 +70,7 @@ The pdf target also needs bun run build:pdf.`);
 }
 
 const runs = Number(values.runs);
+const layoutOptions = values['layout-options'] ? JSON.parse(values['layout-options']) : {};
 const pdfBuilt = existsSync(join(root, 'packages/docx-to-pdf/dist/index.js'));
 const targets =
   values.target === 'all' ? ['server', 'browser', ...(pdfBuilt ? ['pdf'] : [])] : [values.target];
@@ -158,6 +163,8 @@ async function runServer() {
           values['server-edits'],
           '--layout-spans',
           values['layout-spans'],
+          '--layout-options',
+          JSON.stringify(layoutOptions),
         ])
       );
     const merged = mergeRuns(samples);
@@ -277,8 +284,8 @@ async function browserRun(chromium, origin, doc) {
       base = stages.at(-1).heapUsedMb;
     }
     const opened = await page.evaluate(
-      ([url, spans]) => window.__memoryBench.open(url, spans),
-      [`/docs/${doc.name}.docx`, values['layout-spans']]
+      ([url, spans, options]) => window.__memoryBench.open(url, spans, options),
+      [`/docs/${doc.name}.docx`, values['layout-spans'], layoutOptions]
     );
     await measure('open', opened.ms);
     const scrolled = await page.evaluate(() => window.__memoryBench.scrollThrough());
@@ -352,6 +359,7 @@ const report = {
     layoutSpans: values['layout-spans'],
     serverEdits: Number(values['server-edits']),
     browserEdits: Number(values['browser-edits']),
+    layoutOptions,
   },
   documents: documents.map(({ path, ...doc }) => doc),
 };

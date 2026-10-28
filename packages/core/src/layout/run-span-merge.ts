@@ -23,6 +23,7 @@
 
 import { PAGE_BREAK_CHAR } from '@docx-editor.dev/core/store';
 import { automaticTextSpacingBefore } from './cjk-automatic-spacing.ts';
+import { withBox } from './compact-box.ts';
 import type { Alignment } from './paragraph-alignment.ts';
 import { decorationsMatch, type PendingLine } from './pending-line.ts';
 import type { StyleSpanRecord } from './semantic-records.ts';
@@ -140,7 +141,7 @@ function mergeSeams(
       range: { ...first.range, end: last.range.end },
       text,
       // The joined spans abut, so the far edge of the last is the sum of their advances.
-      box: { ...first.box, width: last.box.x + last.box.width - first.box.x },
+      box: withBox(first.box, { width: last.box.x + last.box.width - first.box.x }),
     });
     index = end + 1;
   }
