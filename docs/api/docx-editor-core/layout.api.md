@@ -3826,6 +3826,8 @@ export interface SemanticLayoutOptions {
     readonly session?: LayoutSession;
     // @internal
     readonly showFieldCodes?: boolean;
+    // @beta
+    readonly spans?: SpanGranularity;
     readonly styleCascade?: StyleCascadeTable;
     readonly tocFieldChromeParagraphIds?: ReadonlySet<string>;
     // @internal
@@ -4367,6 +4369,9 @@ export interface SourceRange {
     // (undocumented)
     readonly start: number;
 }
+
+// @beta
+export type SpanGranularity = 'word' | 'run';
 
 // @public
 export interface SpanLinkRecord {

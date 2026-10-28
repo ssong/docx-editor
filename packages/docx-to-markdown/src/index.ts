@@ -68,6 +68,8 @@ export {
   defineFontResolver,
   REVISION_MARKUP_COLORS,
 } from '@docx-editor.dev/core/editor';
+// `OpenDocumentForExportOptions.spans` takes it.
+export type { SpanGranularity } from '@docx-editor.dev/core/export';
 export type {
   ReviewDisplayMode,
   RevisionMarkupOptions,

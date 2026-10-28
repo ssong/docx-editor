@@ -58,7 +58,7 @@ The synthetic documents come from `benchmarks/memory/fixtures.mjs`, at 10, 100, 
 | --- | --- | --- |
 | `--base <ref>` | `origin/main` | The commit to compare against. |
 | `--tolerance <pt>` | `0` | The allowed difference for positions and widths, in points. `0` means exact. |
-| `--spans <mode>` | `exact` | `exact` needs the same spans on each line. `merged` lets one head span join adjacent base spans of the same line, when the text, the start offset, the start x, and the end x match. |
+| `--spans <mode>` | `exact` | `exact` needs the same spans on each line. `merged` lets one head span join adjacent base spans of the same line, when the text, the start offset, the start x, and the end x match. `merged` also lays out your checkout with the layout option `spans: 'run'`. |
 | `--measurer <list>` | `fixed,shaped` | One measurer or both. |
 | `--sizes <list>` | `10,100,1000` | Synthetic document sizes. `''` for none. |
 | `--filter <text>` |  | Only documents whose name contains this text. |

@@ -1638,6 +1638,8 @@ export interface DocxEditorConfig {
     fonts?: FontConfiguration | FontConfigurationFragment | FontResolver;
     fontShaping?: FontShapingOptions;
     imageDecodePort?: ImageDecodePort;
+    // @beta
+    layoutSpans?: SpanGranularity;
     locale?: string;
     lockedControlNavigation?: LockedControlNavigation;
     mode?: 'edit' | 'view' | 'suggesting';
@@ -4064,6 +4066,9 @@ export type SetReviewChangesAuthorOptions = ReviewChangesAttribution & ({
     keys?: never;
     scope?: 'visible' | 'document';
 });
+
+// @beta
+export type SpanGranularity = 'word' | 'run';
 
 // @public
 export interface StyleDefinition {

@@ -43,7 +43,8 @@ Options:
   --filter <text>     only documents whose name contains this text
   --jobs <n>          documents laid out at the same time
   --tolerance <pt>    allowed position difference in points (default: 0, exact)
-  --spans <mode>      exact or merged (default: exact)
+  --spans <mode>      exact or merged (default: exact). merged also lays out this
+                      checkout with the layout option spans: 'run'
   --markdown <file>   also write the report as Markdown
   --head-options <json>
                       extra export session options for this checkout only, for example
@@ -98,7 +99,13 @@ const run = join(here, 'run.mjs');
 const baseOut = join(work, 'out-base');
 const headOut = join(work, 'out-head');
 sh(process.execPath, [run, '--root', baseRoot, '--out', baseOut, ...runArgs], repo);
-const headArgs = values['head-options'] ? ['--export-options', values['head-options']] : [];
+// Merged spans compare a head that joins the words of a run against a base that does not.
+const headOptions = {
+  ...(values['head-options'] ? JSON.parse(values['head-options']) : {}),
+  ...(values.spans === 'merged' ? { spans: 'run' } : {}),
+};
+const headArgs =
+  Object.keys(headOptions).length > 0 ? ['--export-options', JSON.stringify(headOptions)] : [];
 sh(process.execPath, [run, '--root', repo, '--out', headOut, ...runArgs, ...headArgs], repo);
 
 const compareArgs = ['--tolerance', values.tolerance, '--spans', values.spans];

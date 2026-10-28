@@ -1463,6 +1463,7 @@ export function mountPaginatedSurface(
       displayMode: revisionDisplayMode(),
       showFieldCodes: context && !context.live ? false : showFieldCodes,
       fieldResults: fieldScope.mode,
+      spans: options.layoutSpans,
       revisionAuthorFilter: activeAuthorFilter,
       bodyBlockLimit,
     } satisfies LayoutDocumentViewOptions & Record<keyof LayoutDocumentViewOptions, unknown>);

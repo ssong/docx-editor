@@ -1,7 +1,8 @@
 // Canonical document-view composition root shared by browser and exporter hosts.
 
 import type { HeadlessDocumentView, OoxmlNode } from '@docx-editor.dev/core/store';
-import { withFieldResultsMode, type FieldResultsMode } from '../store/package/field-result-mode.ts';
+import type { FieldResultsMode } from '../store/package/field-result-mode.ts';
+import type { SpanGranularity } from './run-span-merge.ts';
 import type { InlineDrawingLayoutContext } from './drawing-layout.ts';
 import type { DocumentLinkProjectors } from './document-link-projector.ts';
 import type { FieldLinkProjector } from './field-pieces.ts';
@@ -16,7 +17,7 @@ import type { ParagraphLayoutCache } from './layout-cache.ts';
 import type { PendingLine } from './pending-line.ts';
 import type { RevisionAuthorFilter, RevisionDisplayMode } from './revision-projection.ts';
 import { layoutSemanticDocumentSteps, type SemanticLayoutOptions } from './semantic-layout.ts';
-import { drainLayoutSteps, stepsInFieldResultsMode, type LayoutSteps } from './layout-steps.ts';
+import { drainLayoutSteps, stepsInLayoutModes, type LayoutSteps } from './layout-steps.ts';
 import type { SemanticLayout, TextMeasurer } from './semantic-records.ts';
 import type { StyleCascadeTable } from './style-cascade.ts';
 
@@ -57,6 +58,7 @@ export const SEMANTIC_LAYOUT_OPTION_ROLES = Object.freeze({
   projectFieldLink: 'document-coordinator',
   showFieldCodes: 'document-coordinator',
   fieldResults: 'document-coordinator',
+  spans: 'document-coordinator',
   documentProperties: 'document-coordinator',
   notes: 'document-coordinator',
   pageBottomReserves: 'layout-internal',
@@ -108,6 +110,8 @@ export interface LayoutDocumentViewOptions {
   readonly showFieldCodes?: boolean;
   /** How saved field results are addressed; see `SemanticLayoutOptions.fieldResults`. */
   readonly fieldResults?: FieldResultsMode;
+  /** Spans per line; see `SemanticLayoutOptions.spans`. */
+  readonly spans?: SpanGranularity;
   readonly inlineDrawingLayout?: InlineDrawingLayoutContext;
   readonly inlineDrawingLayoutForPart?: (
     partName: string
@@ -142,6 +146,8 @@ const _LAYOUT_DOCUMENT_VIEW_OPTION_SINKS = {
   showFieldCodes: 'both',
   // The whole view is laid out inside the mode, notes included.
   fieldResults: 'semantic-layout',
+  // Installed around the whole view like `fieldResults`, notes included.
+  spans: 'semantic-layout',
   inlineDrawingLayout: 'semantic-layout',
   inlineDrawingLayoutForPart: 'notes',
   drawingTokenForParagraph: 'semantic-layout',
@@ -168,9 +174,7 @@ type CoordinatorInputsFor<Sink extends Exclude<LayoutDocumentViewSink, 'both'>> 
  * @internal
  */
 export function layoutDocumentView(options: LayoutDocumentViewOptions): SemanticLayout {
-  return withFieldResultsMode(options.fieldResults, () =>
-    drainLayoutSteps(layoutDocumentViewSteps(options))
-  );
+  return drainLayoutSteps(layoutDocumentViewSteps(options));
 }
 
 /**
@@ -181,7 +185,7 @@ export function layoutDocumentView(options: LayoutDocumentViewOptions): Semantic
 export function layoutDocumentViewSteps(
   options: LayoutDocumentViewOptions
 ): LayoutSteps<SemanticLayout> {
-  return stepsInFieldResultsMode(options.fieldResults, layoutDocumentViewInModeSteps(options));
+  return stepsInLayoutModes(options, layoutDocumentViewInModeSteps(options));
 }
 
 function* layoutDocumentViewInModeSteps(
@@ -226,6 +230,7 @@ function* layoutDocumentViewInModeSteps(
     projectFieldLink: options.projectFieldLink,
     showFieldCodes: options.showFieldCodes,
     fieldResults: options.fieldResults,
+    spans: options.spans,
     inlineDrawingLayout: options.inlineDrawingLayout,
     drawingTokenForParagraph: options.drawingTokenForParagraph,
     drawingLayoutEpoch: options.drawingLayoutEpoch,
@@ -251,6 +256,7 @@ function* layoutDocumentViewInModeSteps(
     projectFieldLink: semanticInputs.projectFieldLink,
     showFieldCodes: semanticInputs.showFieldCodes,
     fieldResults: semanticInputs.fieldResults,
+    spans: semanticInputs.spans,
     documentProperties: semanticInputs.view.documentProperties(),
     inlineDrawingLayout: semanticInputs.inlineDrawingLayout,
     drawingTokenForParagraph: semanticInputs.drawingTokenForParagraph,
