@@ -59,17 +59,8 @@ test('a blank editor offers company fonts and applies loaded regular and bold pr
     expect(editor.getAvailableFonts()).toContain('Company Sans');
     expect(requests).toEqual(['/company/regular.ttf', '/company/bold.ttf']);
 
-    const companyFaces = [...fontSet].filter((face) => face !== hostFace);
-    expect(companyFaces).toHaveLength(2);
-    const alias = companyFaces[0]!.family;
-    expect(alias).toMatch(/^docx-embedded-/);
-    expect(companyFaces.every((face) => face.family === alias)).toBe(true);
-    expect(
-      new Uint8Array(companyFaces.find((face) => face.descriptors.weight === '400')!.source)
-    ).toEqual(regular);
-    expect(
-      new Uint8Array(companyFaces.find((face) => face.descriptors.weight === '700')!.source)
-    ).toEqual(bold);
+    // The blank document names no company font, so its faces wait until a run paints in one.
+    expect([...fontSet]).toEqual([hostFace]);
 
     expect(
       editor.exec({
@@ -82,6 +73,18 @@ test('a blank editor offers company fonts and applies loaded regular and bold pr
     expect(editor.exec({ type: 'insertText', text: 'Regular' }).ok).toBe(true);
     expect(editor.exec({ type: 'toggleMark', mark: 'bold' }).ok).toBe(true);
     expect(editor.exec({ type: 'insertText', text: 'Bold' }).ok).toBe(true);
+    const companyFaces = [...fontSet].filter((face) => face !== hostFace);
+    expect(companyFaces).toHaveLength(2);
+    const alias = companyFaces[0]!.family;
+    expect(alias).toMatch(/^docx-embedded-/);
+    expect(companyFaces.every((face) => face.family === alias)).toBe(true);
+    expect(
+      new Uint8Array(companyFaces.find((face) => face.descriptors.weight === '400')!.source)
+    ).toEqual(regular);
+    expect(
+      new Uint8Array(companyFaces.find((face) => face.descriptors.weight === '700')!.source)
+    ).toEqual(bold);
+
     const spans = [...host.querySelectorAll<HTMLElement>('span[style]')];
     const regularSpan = spans.find((span) => span.textContent === 'Regular');
     const boldSpan = spans.find((span) => span.textContent === 'Bold');

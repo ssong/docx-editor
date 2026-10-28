@@ -1,0 +1,15 @@
+{
+  "impact": "no-impact",
+  "fields": [],
+  "before": "The editor copied every font source it was given and registered a browser FontFace for every admitted face when a document opened.",
+  "after": "The editor keeps a view over a font source that covers a whole, fixed-length, unshared ArrayBuffer and refuses it if it changes. Browser faces register for the families a document asks for, and other families register when a run first paints in them.",
+  "reason": "Font bytes and browser FontFace registration are local to each participant's measurement and paint. No shared field, operation, node identity, text offset, snapshot, or awareness payload changes, and layout still measures from the same admitted bytes.",
+  "tests": [
+    "packages/core/src/editor/__tests__/embedded-font-faces-on-demand.test.ts",
+    "packages/core/src/layout/__tests__/font-resource.test.ts",
+    "packages/core/src/editor/__tests__/font-configuration.test.ts",
+    "packages/fonts/src/__tests__/custom-font-editor.test.ts"
+  ],
+  "changeset": "one-font-copy",
+  "migration": null
+}
