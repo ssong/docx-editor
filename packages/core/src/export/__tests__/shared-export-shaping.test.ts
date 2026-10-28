@@ -35,7 +35,11 @@ function permutations(values: readonly number[]): readonly (readonly number[])[]
 }
 
 test('prepared handles expose no mutable bytes and retain their owned snapshot', async () => {
-  const bytes = new Uint8Array(await Bun.file(fontUrl).arrayBuffer());
+  const file = new Uint8Array(await Bun.file(fontUrl).arrayBuffer());
+  // A view into a larger buffer is copied at preparation; a whole buffer would be adopted.
+  const backing = new Uint8Array(file.byteLength + 8);
+  backing.set(file, 4);
+  const bytes = backing.subarray(4, 4 + file.byteLength);
   const expectedHash = sha256FontBytes(bytes);
   const request = { family: 'DejaVu Sans', weight: 400, style: 'normal' as const };
   const prepared = prepareLayoutFontConfiguration({
@@ -127,7 +131,8 @@ test('shares font admission and HarfBuzz initialization across repeated concurre
   expect(first.producer).toMatch(/shaping:sha256:[0-9a-f]{64}/);
   expect(first.producer).toContain('fallback:fixed:char-width=6:line-height=14');
   expect(first.producer).toContain('producer:1');
-  expect(counters.copies).toBe(1);
+  // The whole-buffer source is adopted, not copied, and hashed once.
+  expect(counters.copies).toBe(0);
   expect(counters.hashes).toBe(1);
   // Byte-identical fonts may already be admitted by another exporter in this process.
   // Concurrent acquisition must perform at most one admission, and reuse adds none.

@@ -2,6 +2,7 @@ import { fontUnitsConverter, exactFontUnitsConverter } from './harfbuzz-font-uni
 import {
   assertValidatedResolvedFont,
   boundedStructuralFontValidator,
+  copyTrustedFontBytes,
   trustedFontBytes,
   trustedFontTableTags,
   type FontByteValidator,
@@ -295,9 +296,6 @@ const tableTags = (bytes: Uint8Array, faceIndex: number): ReadonlySet<string> =>
   return tags;
 };
 
-const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer =>
-  bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-
 const validateRequiredTables: FontByteValidator = (bytes, faceIndex) => {
   const structural = boundedStructuralFontValidator(bytes, faceIndex);
   if (!structural.valid) return structural;
@@ -573,7 +571,15 @@ class ProductionHarfBuzzTextShaper implements HarfBuzzTextShaper {
       }
     }
     this.#instrumentation?.onByteCopy?.();
-    const blob = new this.#harfBuzz.Blob(toArrayBuffer(bytes));
+    let copy: Uint8Array;
+    try {
+      copy = copyTrustedFontBytes(fontResource);
+    } catch {
+      throw new HarfBuzzShapingError('malformedFont', {
+        diagnostic: 'font bytes changed after admission',
+      });
+    }
+    const blob = new this.#harfBuzz.Blob(copy.buffer as ArrayBuffer);
     const face = new this.#harfBuzz.Face(blob, fontResource.faceIndex);
     const font = new this.#harfBuzz.Font(face);
     const metrics = font.hExtents();

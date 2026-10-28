@@ -281,13 +281,14 @@ describe('deferred font faces', () => {
     expect(ids(await composed!.deferred)).toEqual(['early', 'late']);
   });
 
-  test('export copies sources an editor composition already prepared', async () => {
+  test('export prepares its own view of sources an editor composition already prepared', async () => {
     const editorSide = await composeFontOrigins([{ sources: [source('Early', 'early')] }], request);
     let copies = 0;
     const exported = await composePreparedFontOrigins([editorSide], request, {
       instrumentation: { onOwnedByteCopy: () => copies++ },
     });
-    expect(copies).toBe(1);
+    // A whole buffer is adopted again rather than copied.
+    expect(copies).toBe(0);
     expect(exported!.sources![0]!.bytes).not.toBe(editorSide!.sources![0]!.bytes);
   });
 

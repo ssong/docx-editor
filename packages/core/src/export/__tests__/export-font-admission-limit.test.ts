@@ -88,7 +88,8 @@ test('execution admission leaves an oversized face available to later origins an
   expect(result?.sources).toHaveLength(8);
   expect(result?.sources?.every((face) => face.bytes.length <= bytes.length)).toBe(true);
   expect(result?.sources?.some((face) => face.id === 'oversized')).toBe(false);
-  expect(copies).toBe(8);
+  // Whole buffers are adopted, so admission copies none of the eight faces it keeps.
+  expect(copies).toBe(0);
   expect(failures).toHaveLength(1);
   expect(String(failures[0])).toContain(`${oversized.length} bytes`);
 });

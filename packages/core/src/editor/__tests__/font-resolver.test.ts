@@ -569,7 +569,12 @@ describe('composeFontOrigins', () => {
   });
 
   test('samples nested origin inputs before awaiting a later resolver', async () => {
-    const mutableSource = source('Stable Family', 'stable-source');
+    // A view into a larger buffer is copied at handoff. A whole buffer is adopted instead, and a
+    // later write to it refuses the face (font-resource.test.ts).
+    const mutableSource = {
+      ...source('Stable Family', 'stable-source'),
+      bytes: new Uint8Array(4).subarray(1, 2),
+    };
     const mutableSubstitution = {
       from: { family: 'Alias', weight: 400, style: 'normal' as const },
       to: { family: 'Stable Family', weight: 400, style: 'normal' as const },
@@ -789,7 +794,8 @@ describe('composeFontOrigins', () => {
     );
 
     expect(merged?.sources?.map((entry) => entry.id)).toEqual(['same-face']);
-    expect(copies).toBe(1);
+    // A whole buffer is adopted rather than copied; it is still hashed exactly once.
+    expect(copies).toBe(0);
     expect(hashes).toBe(1);
   });
 

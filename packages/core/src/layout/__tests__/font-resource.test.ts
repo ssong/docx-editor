@@ -27,6 +27,13 @@ const ttcBytes = () =>
     0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   ]);
 
+/** The same bytes as a view into a larger buffer, which admission copies instead of adopting. */
+const inLargerBuffer = (bytes: Uint8Array): Uint8Array => {
+  const backing = new Uint8Array(bytes.byteLength + 8);
+  backing.set(bytes, 4);
+  return backing.subarray(4, 4 + bytes.byteLength);
+};
+
 const source = (request: FontRequest = regular, bytes = sfntBytes()) => ({
   request,
   id: `${request.family}-${request.weight}-${request.style}`,
@@ -273,7 +280,7 @@ describe('font resource contracts', () => {
   });
 
   test('owns immutable byte copies on input and output', () => {
-    const supplied = sfntBytes();
+    const supplied = inLargerBuffer(sfntBytes());
     const expected = supplied.slice();
     const snapshot = createFontResourceSnapshot({
       epoch: 1,
@@ -293,8 +300,63 @@ describe('font resource contracts', () => {
     expect(Object.isFrozen(result.request)).toBe(true);
   });
 
-  test('does not trust a proxy that spoofs internal preparation symbols', () => {
+  test('adopts a whole buffer and refuses it once the caller changes it', () => {
     const supplied = sfntBytes();
+    const expected = supplied.slice();
+    const copies: number[] = [];
+    const snapshot = createFontResourceSnapshot({
+      epoch: 1,
+      maxFontBytes: 64,
+      resources: [source(regular, supplied)],
+      validateFont: boundedStructuralFontValidator,
+      instrumentation: { onOwnedByteCopy: () => copies.push(1) },
+    });
+    const result = snapshot.resolve(regular);
+    if (result instanceof FontResolutionError) throw result;
+    expect(copies).toEqual([]);
+    expect(result.bytes).toEqual(expected);
+    expect(result.bytes).not.toBe(result.bytes);
+
+    supplied[0] = 99;
+    expect(() => result.bytes).toThrow('changed after admission');
+  });
+
+  test('binds the admitted hash to the bytes the validator checked', () => {
+    const supplied = sfntBytes();
+    const definition = source(regular, supplied);
+    const snapshot = createFontResourceSnapshot({
+      epoch: 1,
+      maxFontBytes: 64,
+      resources: [definition],
+      validateFont: (bytes, faceIndex) => {
+        // A caller that writes to its buffer while admission runs.
+        supplied[11] = 7;
+        return boundedStructuralFontValidator(bytes, faceIndex);
+      },
+    });
+    expect(snapshot.resolve(regular)).toMatchObject({ code: 'hashMismatch' });
+  });
+
+  test('copies a shared buffer instead of adopting it', () => {
+    const shared = new Uint8Array(new SharedArrayBuffer(12));
+    shared.set(sfntBytes());
+    const copies: number[] = [];
+    const snapshot = createFontResourceSnapshot({
+      epoch: 1,
+      maxFontBytes: 64,
+      resources: [source(regular, shared as unknown as Uint8Array)],
+      validateFont: boundedStructuralFontValidator,
+      instrumentation: { onOwnedByteCopy: () => copies.push(1) },
+    });
+    const result = snapshot.resolve(regular);
+    if (result instanceof FontResolutionError) throw result;
+    shared[0] = 99;
+    expect(copies).toEqual([1]);
+    expect(result.bytes).toEqual(sfntBytes());
+  });
+
+  test('does not trust a proxy that spoofs internal preparation symbols', () => {
+    const supplied = inLargerBuffer(sfntBytes());
     const expected = supplied.slice();
     const definition = source(regular, supplied);
     const hostile = new Proxy(definition, {
@@ -382,7 +444,7 @@ describe('font resource contracts', () => {
     expect(iteratorCalls).toBe(0);
   });
 
-  test('copies and validates each admitted face once regardless of repeated resolution', () => {
+  test('validates each admitted face once regardless of repeated resolution', () => {
     const events: string[] = [];
     const snapshot = createFontResourceSnapshot({
       epoch: 1,
@@ -400,7 +462,8 @@ describe('font resource contracts', () => {
     const first = snapshot.resolve(regular);
     const second = snapshot.resolve(regular);
     expect(first).toBe(second);
-    expect(events).toEqual(['copy', 'scan', 'validate:12:0']);
+    // A whole buffer is adopted, so no copy is reported.
+    expect(events).toEqual(['scan', 'validate:12:0']);
   });
 
   test('resource epochs preserve cache entries whose exact font dependency is unchanged', () => {

@@ -11,6 +11,11 @@ export interface FontFaceRequest {
 export interface FontSource {
   readonly request: FontFaceRequest;
   readonly id: string;
+  /**
+   * The face's file. When the array covers its whole `ArrayBuffer`, the editor keeps a reference
+   * to it instead of a copy, so do not write to it afterwards: a face whose bytes change is
+   * refused where it next reaches the shaper or the browser.
+   */
   readonly bytes: Uint8Array;
   readonly hash: string;
   readonly faceIndex: number;
