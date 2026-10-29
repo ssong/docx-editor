@@ -29,7 +29,9 @@ concurrency:
 jobs:
   screenshot-diff:
     if: github.actor != 'dependabot[bot]'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    # A GitHub-hosted runner: on this repository, jobs that ask for a Blacksmith runner stay
+    # queued until GitHub cancels them, so the gate would never run.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - name: Checkout
