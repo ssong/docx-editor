@@ -349,8 +349,9 @@ jobs:
   layout-equivalence:
     name: layout equivalence
     if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    timeout-minutes: 30
+    # GitHub-hosted: a repository without Blacksmith runners never starts a job on their labels.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     permissions:
       contents: read
       pull-requests: read # read the allow-label live
