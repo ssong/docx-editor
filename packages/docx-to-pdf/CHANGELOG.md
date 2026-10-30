@@ -1,5 +1,19 @@
 # @docx-editor.dev/docx-to-pdf
 
+## 2.34.0
+
+### Patch Changes
+
+- 5abd50f: A localized East Asian font name, such as メイリオ, now resolves to the face supplied under its English name, and a missing bold or italic face of an East Asian family draws in that family's regular face. Fixes #1647.
+- afca693: PDF export parses merged equation text in linear time and no longer writes two adjustment numbers without a separator.
+- 6505457: Equations with spaced operators paint each source run as one text span, and PDF export writes one text object per face and baseline, so pages with many operators paint faster and export smaller. Fixes #1560.
+- 752d5fb: Kana compression keeps a kana and its spaced sound mark on a full line, and PDF text gives a kana and a joined sound mark as the precomposed character. Fixes #1638.
+- 620b7ca: Markdown conversion and PDF export build against the latest layout records again.
+- f7baed2: PDF export paints equations with an overline or underline bar and draws equation text in the same face that layout measured.
+- 78abf89: PDF export draws highlight, shading, strikethrough, every underline style, and tracked-change marks continuously across the gaps of justified and distributed lines, as the editor does.
+- 5abd50f: Symbols that the text fonts lack, such as ballot boxes, no longer make their line taller than the symbol fallback font does when a packaged font draws them. Fixes #1648.
+- Updated dependencies: @docx-editor.dev/core@2.34.0, @docx-editor.dev/fonts-cjk@2.34.0, @docx-editor.dev/fonts@2.34.0, @docx-editor.dev/pro@2.34.0
+
 ## 2.33.0
 
 ### Minor Changes

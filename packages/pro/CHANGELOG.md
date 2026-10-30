@@ -1,5 +1,17 @@
 # @docx-editor.dev/pro
 
+## 2.34.0
+
+### Patch Changes
+
+- 74b3b0e: In a collaboration session, moving a block toward the start of its container, or formatting text whose properties are stored out of order, no longer removes a neighboring block or property for every participant. A table moved after concurrent moves of the same table keeps the empty paragraph between it and the next table. Fixes #1572. Fixes #1606.
+- 2a69317: In a collaboration session, rejecting every change of a paragraph that holds a tracked break and a tracked paragraph mark rejects both in one call. Fixes #1655.
+- 2a69317: In a collaboration session, text that a participant types in the middle paragraph of a split into three paragraphs stays when the author of the split undoes it.
+- 4fbfb16: In a collaboration session, a table row, column, table, or paragraph that two participants delete at the same time stays deleted when one of them undoes, and typing that a participant undoes no longer shows again in a copy that a concurrent join made. An undo next to moved blocks no longer removes another participant's text or leaves a moved table's empty paragraph without the identity that remote carets need. Fixes #1601.
+- e2800c7: When two people type at the same place at the same time, each person's characters now stay in the order they typed them. Fixes #1693.
+- f182c70: Find the right header, note, section, or link for content another participant created during a collaboration session, so table controls, page setup, comments, custom nodes, and the content control at the caret act on it. Fixes #1633.
+- Updated dependencies: @docx-editor.dev/core@2.34.0, @docx-editor.dev/react@2.34.0, @docx-editor.dev/vue@2.34.0
+
 ## 2.33.0
 
 ### Minor Changes

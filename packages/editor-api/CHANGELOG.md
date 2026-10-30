@@ -1,5 +1,18 @@
 # @docx-editor.dev/editor-api
 
+## 2.34.0
+
+### Minor Changes
+
+- e3a5a01: Add `Document.getStyles()`, which lists the styles a document defines with read-only `Style` properties such as `nameLocal` and `type`, so you can find a paragraph style name that `paragraph.style` accepts. Fixes #1616.
+
+### Patch Changes
+
+- 7539b23: A load on an object that a write returns, such as the range from `insertText()`, can share that write's `context.sync()` and reports the inserted content. Fixes #1625.
+- 7539b23: With change tracking on, `Paragraph.split()` proposes each new paragraph mark, and `Range.insertBreak()` proposes page and next-page section breaks, as tracked changes that reject removes. Fixes #1617.
+- 1d2fa86: `Body.shapes` and `Paragraph.shapes` now list legacy VML shapes, so `Shape.body` reads, edits, and reviews the text of VML text boxes, whose tracked changes no longer belong to the main body. A text box or closed shape with no text story now answers an empty `body` that refuses writes, instead of failing the read.
+- Updated dependencies: @docx-editor.dev/core@2.34.0
+
 ## 2.33.0
 
 ### Patch Changes
