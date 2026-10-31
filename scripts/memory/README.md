@@ -1,5 +1,8 @@
 # Edit memory profiler
 
+For memory use across document sizes, on a server and in a browser, see the
+[core memory benchmark](../../benchmarks/memory/README.md).
+
 `bun run memory:edits` tells you whether editing a document keeps growing the heap, and
 what holds the memory that grows. It opens a `.docx` file in the demo in Chrome, runs three
 batches of one kind of edit, and takes a V8 heap snapshot after each batch.
