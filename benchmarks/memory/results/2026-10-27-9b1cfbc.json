@@ -1,0 +1,1330 @@
+{
+  "schema": 1,
+  "date": "2026-10-27T12:33:13.825Z",
+  "commit": "9b1cfbc",
+  "dirty": false,
+  "environment": {
+    "platform": "linux x64",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "cpus": 4,
+    "memoryGb": 16,
+    "node": "v22.22.0",
+    "chromium": "153.0.8010.12"
+  },
+  "options": {
+    "runs": 3,
+    "fonts": "shaped",
+    "serverEdits": 200,
+    "browserEdits": 50
+  },
+  "documents": [
+    {
+      "name": "synthetic-10",
+      "bytes": 5964,
+      "sha256": "57807b50fb67dbc62282249299a05e6e1e8dfc50a25887bbb8e965f0bede654e"
+    },
+    {
+      "name": "synthetic-50",
+      "bytes": 13329,
+      "sha256": "1d47f603cc352002b0801ec4b420a3e5567c122ac332323f83943a54720e9f38"
+    },
+    {
+      "name": "synthetic-100",
+      "bytes": 22413,
+      "sha256": "18d78ec57eda51408652575494423febeecf523b0d00026f10b78e93726280ff"
+    },
+    {
+      "name": "synthetic-250",
+      "bytes": 49547,
+      "sha256": "b85c683f7f5c6d3975a6fa6a70a5ee3d2543d287f6fec6e907bdd27ed33468b2"
+    },
+    {
+      "name": "synthetic-500",
+      "bytes": 94681,
+      "sha256": "40a666904ab5986bbd9b861b56838fe5033d56d8f046f019b16368f52cbf32de"
+    },
+    {
+      "name": "synthetic-1000",
+      "bytes": 184946,
+      "sha256": "246b3d03309927e424e055210ab3748c5d5386b6b801ecaf61fb57ef4619a071"
+    },
+    {
+      "name": "demo",
+      "bytes": 1311881,
+      "sha256": "269329fc7ae54b3f289b3ac52efde387edc2e566ef9a48d637e841022c7e0eab"
+    },
+    {
+      "name": "typing-perf-521pp",
+      "bytes": 425906,
+      "sha256": "afe6043ba2c66d162ae9de9bbd03c360e7bb7ef139db5365a1d56d2408b4e0e6"
+    }
+  ],
+  "server": [
+    {
+      "document": "synthetic-10",
+      "bytes": 5964,
+      "savedBytes": 7792,
+      "pages": 13,
+      "paragraphs": 190,
+      "node": "v22.22.0",
+      "stages": [
+        {
+          "stage": "modules loaded",
+          "ms": 0,
+          "heapUsedMb": 13.44,
+          "externalMb": 2.15,
+          "rssMb": 72,
+          "peakRssMb": 73.59,
+          "retainedMb": 0,
+          "deltaMb": 0
+        },
+        {
+          "stage": "open",
+          "ms": 50,
+          "heapUsedMb": 14.51,
+          "externalMb": 2.28,
+          "rssMb": 77.93,
+          "peakRssMb": 77.93,
+          "retainedMb": 1.07,
+          "deltaMb": 1.07
+        },
+        {
+          "stage": "layout",
+          "ms": 390,
+          "heapUsedMb": 23.89,
+          "externalMb": 2.28,
+          "rssMb": 108.47,
+          "peakRssMb": 109.47,
+          "retainedMb": 10.45,
+          "deltaMb": 9.38
+        },
+        {
+          "stage": "release",
+          "ms": 1,
+          "heapUsedMb": 18.99,
+          "externalMb": 2.21,
+          "rssMb": 108.47,
+          "peakRssMb": 109.47,
+          "retainedMb": 5.55,
+          "deltaMb": -4.9
+        },
+        {
+          "stage": "reopen store",
+          "ms": 34,
+          "heapUsedMb": 19.83,
+          "externalMb": 2.28,
+          "rssMb": 109.43,
+          "peakRssMb": 111.71,
+          "retainedMb": 6.39,
+          "deltaMb": 0.84
+        },
+        {
+          "stage": "edit x200",
+          "ms": 89,
+          "heapUsedMb": 21.49,
+          "externalMb": 2.28,
+          "rssMb": 115.59,
+          "peakRssMb": 120.27,
+          "retainedMb": 8.05,
+          "deltaMb": 1.66
+        },
+        {
+          "stage": "save",
+          "ms": 37,
+          "heapUsedMb": 21.94,
+          "externalMb": 2.35,
+          "rssMb": 119.79,
+          "peakRssMb": 120.27,
+          "retainedMb": 8.5,
+          "deltaMb": 0.45
+        }
+      ]
+    },
+    {
+      "document": "synthetic-50",
+      "bytes": 13329,
+      "savedBytes": 24856,
+      "pages": 63,
+      "paragraphs": 950,
+      "node": "v22.22.0",
+      "stages": [
+        {
+          "stage": "modules loaded",
+          "ms": 0,
+          "heapUsedMb": 13.44,
+          "externalMb": 2.15,
+          "rssMb": 74.7,
+          "peakRssMb": 74.7,
+          "retainedMb": 0,
+          "deltaMb": 0
+        },
+        {
+          "stage": "open",
+          "ms": 168,
+          "heapUsedMb": 16.92,
+          "externalMb": 2.55,
+          "rssMb": 98.52,
+          "peakRssMb": 98.95,
+          "retainedMb": 3.48,
+          "deltaMb": 3.48
+        },
+        {
+          "stage": "layout",
+          "ms": 1013,
+          "heapUsedMb": 44.4,
+          "externalMb": 2.55,
+          "rssMb": 147.52,
+          "peakRssMb": 153.29,
+          "retainedMb": 30.96,
+          "deltaMb": 27.48
+        },
+        {
+          "stage": "release",
+          "ms": 1,
+          "heapUsedMb": 20.73,
+          "externalMb": 2.21,
+          "rssMb": 147.52,
+          "peakRssMb": 153.29,
+          "retainedMb": 7.29,
+          "deltaMb": -23.67
+        },
+        {
+          "stage": "reopen store",
+          "ms": 158,
+          "heapUsedMb": 23.4,
+          "externalMb": 2.55,
+          "rssMb": 150.88,
+          "peakRssMb": 153.29,
+          "retainedMb": 9.96,
+          "deltaMb": 2.66
+        },
+        {
+          "stage": "edit x200",
+          "ms": 121,
+          "heapUsedMb": 25.9,
+          "externalMb": 2.55,
+          "rssMb": 149.96,
+          "peakRssMb": 153.29,
+          "retainedMb": 12.46,
+          "deltaMb": 2.52
+        },
+        {
+          "stage": "save",
+          "ms": 101,
+          "heapUsedMb": 27.01,
+          "externalMb": 2.91,
+          "rssMb": 152.28,
+          "peakRssMb": 153.29,
+          "retainedMb": 13.57,
+          "deltaMb": 1.08
+        }
+      ]
+    },
+    {
+      "document": "synthetic-100",
+      "bytes": 22413,
+      "savedBytes": 45217,
+      "pages": 126,
+      "paragraphs": 1900,
+      "node": "v22.22.0",
+      "stages": [
+        {
+          "stage": "modules loaded",
+          "ms": 0,
+          "heapUsedMb": 13.44,
+          "externalMb": 2.15,
+          "rssMb": 72.13,
+          "peakRssMb": 73.38,
+          "retainedMb": 0,
+          "deltaMb": 0
+        },
+        {
+          "stage": "open",
+          "ms": 297,
+          "heapUsedMb": 19.07,
+          "externalMb": 2.89,
+          "rssMb": 124.55,
+          "peakRssMb": 125.71,
+          "retainedMb": 5.63,
+          "deltaMb": 5.63
+        },
+        {
+          "stage": "layout",
+          "ms": 1760,
+          "heapUsedMb": 69.02,
+          "externalMb": 2.89,
+          "rssMb": 178.51,
+          "peakRssMb": 190.83,
+          "retainedMb": 55.58,
+          "deltaMb": 49.95
+        },
+        {
+          "stage": "release",
+          "ms": 1,
+          "heapUsedMb": 22.16,
+          "externalMb": 2.22,
+          "rssMb": 178.51,
+          "peakRssMb": 190.83,
+          "retainedMb": 8.72,
+          "deltaMb": -46.86
+        },
+        {
+          "stage": "reopen store",
+          "ms": 223,
+          "heapUsedMb": 27.21,
+          "externalMb": 2.89,
+          "rssMb": 180.89,
+          "peakRssMb": 190.83,
+          "retainedMb": 13.77,
+          "deltaMb": 5.05
+        },
+        {
+          "stage": "edit x200",
+          "ms": 135,
+          "heapUsedMb": 31.07,
+          "externalMb": 2.89,
+          "rssMb": 181.63,
+          "peakRssMb": 190.83,
+          "retainedMb": 17.63,
+          "deltaMb": 3.87
+        },
+        {
+          "stage": "save",
+          "ms": 170,
+          "heapUsedMb": 33.01,
+          "externalMb": 3.61,
+          "rssMb": 187.35,
+          "peakRssMb": 190.83,
+          "retainedMb": 19.57,
+          "deltaMb": 1.93
+        }
+      ]
+    },
+    {
+      "document": "synthetic-250",
+      "bytes": 49547,
+      "savedBytes": 106481,
+      "pages": 316,
+      "paragraphs": 4750,
+      "node": "v22.22.0",
+      "stages": [
+        {
+          "stage": "modules loaded",
+          "ms": 0,
+          "heapUsedMb": 13.44,
+          "externalMb": 2.15,
+          "rssMb": 73.68,
+          "peakRssMb": 73.68,
+          "retainedMb": 0,
+          "deltaMb": 0
+        },
+        {
+          "stage": "open",
+          "ms": 579,
+          "heapUsedMb": 27.19,
+          "externalMb": 3.91,
+          "rssMb": 147.16,
+          "peakRssMb": 151.93,
+          "retainedMb": 13.75,
+          "deltaMb": 13.75
+        },
+        {
+          "stage": "layout",
+          "ms": 3561,
+          "heapUsedMb": 143.42,
+          "externalMb": 3.91,
+          "rssMb": 282.56,
+          "peakRssMb": 302.32,
+          "retainedMb": 129.98,
+          "deltaMb": 116.23
+        },
+        {
+          "stage": "release",
+          "ms": 1,
+          "heapUsedMb": 25.7,
+          "externalMb": 2.25,
+          "rssMb": 280.19,
+          "peakRssMb": 302.32,
+          "retainedMb": 12.26,
+          "deltaMb": -117.73
+        },
+        {
+          "stage": "reopen store",
+          "ms": 563,
+          "heapUsedMb": 38.79,
+          "externalMb": 3.91,
+          "rssMb": 281.67,
+          "peakRssMb": 302.32,
+          "retainedMb": 25.35,
+          "deltaMb": 13.09
+        },
+        {
+          "stage": "edit x200",
+          "ms": 280,
+          "heapUsedMb": 46.49,
+          "externalMb": 3.91,
+          "rssMb": 283.68,
+          "peakRssMb": 302.32,
+          "retainedMb": 33.05,
+          "deltaMb": 7.7
+        },
+        {
+          "stage": "save",
+          "ms": 386,
+          "heapUsedMb": 52.24,
+          "externalMb": 5.69,
+          "rssMb": 290.1,
+          "peakRssMb": 302.32,
+          "retainedMb": 38.8,
+          "deltaMb": 5.75
+        }
+      ]
+    },
+    {
+      "document": "synthetic-500",
+      "bytes": 94681,
+      "savedBytes": 208275,
+      "pages": 634,
+      "paragraphs": 9500,
+      "node": "v22.22.0",
+      "stages": [
+        {
+          "stage": "modules loaded",
+          "ms": 0,
+          "heapUsedMb": 13.44,
+          "externalMb": 2.15,
+          "rssMb": 71.52,
+          "peakRssMb": 73.5,
+          "retainedMb": 0,
+          "deltaMb": 0
+        },
+        {
+          "stage": "open",
+          "ms": 1067,
+          "heapUsedMb": 40.3,
+          "externalMb": 5.61,
+          "rssMb": 179.66,
+          "peakRssMb": 190.03,
+          "retainedMb": 26.86,
+          "deltaMb": 26.86
+        },
+        {
+          "stage": "layout",
+          "ms": 6866,
+          "heapUsedMb": 266.04,
+          "externalMb": 5.61,
+          "rssMb": 422.37,
+          "peakRssMb": 462.88,
+          "retainedMb": 252.6,
+          "deltaMb": 225.73
+        },
+        {
+          "stage": "release",
+          "ms": 1,
+          "heapUsedMb": 30.53,
+          "externalMb": 2.29,
+          "rssMb": 418.2,
+          "peakRssMb": 462.88,
+          "retainedMb": 17.09,
+          "deltaMb": -235.51
+        },
+        {
+          "stage": "reopen store",
+          "ms": 1239,
+          "heapUsedMb": 56.64,
+          "externalMb": 5.61,
+          "rssMb": 433.35,
+          "peakRssMb": 462.88,
+          "retainedMb": 43.2,
+          "deltaMb": 26.09
+        },
+        {
+          "stage": "edit x200",
+          "ms": 488,
+          "heapUsedMb": 71.83,
+          "externalMb": 5.61,
+          "rssMb": 437.23,
+          "peakRssMb": 462.88,
+          "retainedMb": 58.39,
+          "deltaMb": 15.19
+        },
+        {
+          "stage": "save",
+          "ms": 684,
+          "heapUsedMb": 82.93,
+          "externalMb": 9.17,
+          "rssMb": 447.7,
+          "peakRssMb": 462.88,
+          "retainedMb": 69.49,
+          "deltaMb": 11.1
+        }
+      ]
+    },
+    {
+      "document": "synthetic-1000",
+      "bytes": 184946,
+      "savedBytes": 411407,
+      "pages": 1270,
+      "paragraphs": 19000,
+      "node": "v22.22.0",
+      "stages": [
+        {
+          "stage": "modules loaded",
+          "ms": 0,
+          "heapUsedMb": 13.44,
+          "externalMb": 2.15,
+          "rssMb": 73.89,
+          "peakRssMb": 73.89,
+          "retainedMb": 0,
+          "deltaMb": 0
+        },
+        {
+          "stage": "open",
+          "ms": 2231,
+          "heapUsedMb": 66.35,
+          "externalMb": 9,
+          "rssMb": 241.56,
+          "peakRssMb": 267,
+          "retainedMb": 52.91,
+          "deltaMb": 52.91
+        },
+        {
+          "stage": "layout",
+          "ms": 13414,
+          "heapUsedMb": 510.29,
+          "externalMb": 9,
+          "rssMb": 688.5,
+          "peakRssMb": 768.83,
+          "retainedMb": 496.85,
+          "deltaMb": 443.94
+        },
+        {
+          "stage": "release",
+          "ms": 2,
+          "heapUsedMb": 39.38,
+          "externalMb": 2.38,
+          "rssMb": 681.17,
+          "peakRssMb": 768.83,
+          "retainedMb": 25.94,
+          "deltaMb": -470.91
+        },
+        {
+          "stage": "reopen store",
+          "ms": 2013,
+          "heapUsedMb": 91.52,
+          "externalMb": 9,
+          "rssMb": 709.62,
+          "peakRssMb": 768.83,
+          "retainedMb": 78.08,
+          "deltaMb": 52.17
+        },
+        {
+          "stage": "edit x200",
+          "ms": 843,
+          "heapUsedMb": 115.35,
+          "externalMb": 9,
+          "rssMb": 716.99,
+          "peakRssMb": 768.83,
+          "retainedMb": 101.91,
+          "deltaMb": 23.83
+        },
+        {
+          "stage": "save",
+          "ms": 1372,
+          "heapUsedMb": 137.1,
+          "externalMb": 16.13,
+          "rssMb": 734.48,
+          "peakRssMb": 768.83,
+          "retainedMb": 123.66,
+          "deltaMb": 21.75
+        }
+      ]
+    },
+    {
+      "document": "demo",
+      "bytes": 1311881,
+      "savedBytes": 1267787,
+      "pages": 11,
+      "paragraphs": 334,
+      "node": "v22.22.0",
+      "stages": [
+        {
+          "stage": "modules loaded",
+          "ms": 0,
+          "heapUsedMb": 13.44,
+          "externalMb": 2.15,
+          "rssMb": 73.74,
+          "peakRssMb": 73.74,
+          "retainedMb": 0,
+          "deltaMb": 0
+        },
+        {
+          "stage": "open",
+          "ms": 173,
+          "heapUsedMb": 16.03,
+          "externalMb": 5.9,
+          "rssMb": 99.14,
+          "peakRssMb": 101.65,
+          "retainedMb": 2.59,
+          "deltaMb": 2.59
+        },
+        {
+          "stage": "layout",
+          "ms": 1292,
+          "heapUsedMb": 31.43,
+          "externalMb": 5.92,
+          "rssMb": 140.86,
+          "peakRssMb": 158.88,
+          "retainedMb": 17.99,
+          "deltaMb": 15.38
+        },
+        {
+          "stage": "release",
+          "ms": 1,
+          "heapUsedMb": 23.29,
+          "externalMb": 3.45,
+          "rssMb": 138.25,
+          "peakRssMb": 158.88,
+          "retainedMb": 9.85,
+          "deltaMb": -8.14
+        },
+        {
+          "stage": "reopen store",
+          "ms": 184,
+          "heapUsedMb": 24.99,
+          "externalMb": 5.9,
+          "rssMb": 138.79,
+          "peakRssMb": 158.88,
+          "retainedMb": 11.55,
+          "deltaMb": 1.7
+        },
+        {
+          "stage": "edit x200",
+          "ms": 137,
+          "heapUsedMb": 26.98,
+          "externalMb": 5.9,
+          "rssMb": 140.11,
+          "peakRssMb": 158.88,
+          "retainedMb": 13.53,
+          "deltaMb": 1.99
+        },
+        {
+          "stage": "save",
+          "ms": 339,
+          "heapUsedMb": 27.98,
+          "externalMb": 7.26,
+          "rssMb": 153.26,
+          "peakRssMb": 162.88,
+          "retainedMb": 14.54,
+          "deltaMb": 1.01
+        }
+      ]
+    },
+    {
+      "document": "typing-perf-521pp",
+      "bytes": 425906,
+      "savedBytes": 567911,
+      "pages": 542,
+      "paragraphs": 12820,
+      "node": "v22.22.0",
+      "stages": [
+        {
+          "stage": "modules loaded",
+          "ms": 0,
+          "heapUsedMb": 13.44,
+          "externalMb": 2.15,
+          "rssMb": 73.12,
+          "peakRssMb": 73.12,
+          "retainedMb": 0,
+          "deltaMb": 0
+        },
+        {
+          "stage": "open",
+          "ms": 2308,
+          "heapUsedMb": 57.4,
+          "externalMb": 8.35,
+          "rssMb": 229.02,
+          "peakRssMb": 251.32,
+          "retainedMb": 43.96,
+          "deltaMb": 43.96
+        },
+        {
+          "stage": "layout",
+          "ms": 10975,
+          "heapUsedMb": 271.37,
+          "externalMb": 8.35,
+          "rssMb": 580.21,
+          "peakRssMb": 604.39,
+          "retainedMb": 257.93,
+          "deltaMb": 213.98
+        },
+        {
+          "stage": "release",
+          "ms": 1,
+          "heapUsedMb": 48.19,
+          "externalMb": 2.61,
+          "rssMb": 570.39,
+          "peakRssMb": 604.39,
+          "retainedMb": 34.75,
+          "deltaMb": -223.18
+        },
+        {
+          "stage": "reopen store",
+          "ms": 2062,
+          "heapUsedMb": 90.95,
+          "externalMb": 8.35,
+          "rssMb": 595.53,
+          "peakRssMb": 606.22,
+          "retainedMb": 77.51,
+          "deltaMb": 42.74
+        },
+        {
+          "stage": "edit x200",
+          "ms": 529,
+          "heapUsedMb": 106.4,
+          "externalMb": 8.35,
+          "rssMb": 599.19,
+          "peakRssMb": 606.22,
+          "retainedMb": 92.96,
+          "deltaMb": 15.48
+        },
+        {
+          "stage": "save",
+          "ms": 1891,
+          "heapUsedMb": 182.41,
+          "externalMb": 14.74,
+          "rssMb": 617.32,
+          "peakRssMb": 618.72,
+          "retainedMb": 168.97,
+          "deltaMb": 76.02
+        }
+      ]
+    }
+  ],
+  "browser": [
+    {
+      "document": "synthetic-10",
+      "pages": 10,
+      "stages": [
+        {
+          "stage": "page loaded",
+          "ms": 0,
+          "heapUsedMb": 6.17,
+          "retainedMb": 0,
+          "deltaMb": 0,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 13.62,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "fonts loaded",
+          "ms": 0,
+          "heapUsedMb": 6.21,
+          "retainedMb": 0.04,
+          "deltaMb": 0.04,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 20.74,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "open",
+          "ms": 779,
+          "heapUsedMb": 18.8,
+          "retainedMb": 12.59,
+          "deltaMb": 12.59,
+          "heapTotalMb": 19.32,
+          "pageTotalMb": 42.92,
+          "domMb": 0.32,
+          "domNodes": 1978,
+          "listeners": 74
+        },
+        {
+          "stage": "scroll through",
+          "ms": 473,
+          "heapUsedMb": 19.11,
+          "retainedMb": 12.9,
+          "deltaMb": 0.3,
+          "heapTotalMb": 19.82,
+          "pageTotalMb": 43.27,
+          "domMb": 0.32,
+          "domNodes": 1978,
+          "listeners": 74
+        },
+        {
+          "stage": "type x50",
+          "ms": 1899,
+          "heapUsedMb": 23.34,
+          "retainedMb": 17.13,
+          "deltaMb": 4.24,
+          "heapTotalMb": 24.07,
+          "pageTotalMb": 47.63,
+          "domMb": 0.46,
+          "domNodes": 2940,
+          "listeners": 74
+        },
+        {
+          "stage": "destroy",
+          "ms": 0,
+          "heapUsedMb": 16.02,
+          "retainedMb": 9.81,
+          "deltaMb": -7.32,
+          "heapTotalMb": 17.07,
+          "pageTotalMb": 32.69,
+          "domMb": 0.03,
+          "domNodes": 32,
+          "listeners": 14
+        }
+      ]
+    },
+    {
+      "document": "synthetic-50",
+      "pages": 50,
+      "stages": [
+        {
+          "stage": "page loaded",
+          "ms": 0,
+          "heapUsedMb": 6.17,
+          "retainedMb": 0,
+          "deltaMb": 0,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 13.62,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "fonts loaded",
+          "ms": 0,
+          "heapUsedMb": 6.21,
+          "retainedMb": 0.04,
+          "deltaMb": 0.04,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 20.74,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "open",
+          "ms": 1520,
+          "heapUsedMb": 36.35,
+          "retainedMb": 30.14,
+          "deltaMb": 30.14,
+          "heapTotalMb": 36.95,
+          "pageTotalMb": 60.79,
+          "domMb": 0.33,
+          "domNodes": 2018,
+          "listeners": 74
+        },
+        {
+          "stage": "scroll through",
+          "ms": 1942,
+          "heapUsedMb": 36.6,
+          "retainedMb": 30.39,
+          "deltaMb": 0.26,
+          "heapTotalMb": 37.7,
+          "pageTotalMb": 61.33,
+          "domMb": 0.33,
+          "domNodes": 2018,
+          "listeners": 74
+        },
+        {
+          "stage": "type x50",
+          "ms": 2654,
+          "heapUsedMb": 40.45,
+          "retainedMb": 34.24,
+          "deltaMb": 3.85,
+          "heapTotalMb": 41.2,
+          "pageTotalMb": 65.41,
+          "domMb": 0.6,
+          "domNodes": 3941,
+          "listeners": 74
+        },
+        {
+          "stage": "destroy",
+          "ms": 0,
+          "heapUsedMb": 17.08,
+          "retainedMb": 10.87,
+          "deltaMb": -23.37,
+          "heapTotalMb": 17.82,
+          "pageTotalMb": 33.83,
+          "domMb": 0.03,
+          "domNodes": 32,
+          "listeners": 14
+        }
+      ]
+    },
+    {
+      "document": "synthetic-100",
+      "pages": 100,
+      "stages": [
+        {
+          "stage": "page loaded",
+          "ms": 0,
+          "heapUsedMb": 6.17,
+          "retainedMb": 0,
+          "deltaMb": 0,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 13.62,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "fonts loaded",
+          "ms": 0,
+          "heapUsedMb": 6.21,
+          "retainedMb": 0.04,
+          "deltaMb": 0.04,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 20.74,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "open",
+          "ms": 2001,
+          "heapUsedMb": 46.84,
+          "retainedMb": 40.63,
+          "deltaMb": 40.63,
+          "heapTotalMb": 47.8,
+          "pageTotalMb": 71.65,
+          "domMb": 0.34,
+          "domNodes": 2070,
+          "listeners": 74
+        },
+        {
+          "stage": "scroll through",
+          "ms": 3748,
+          "heapUsedMb": 46.93,
+          "retainedMb": 40.72,
+          "deltaMb": 0.09,
+          "heapTotalMb": 48.3,
+          "pageTotalMb": 72.3,
+          "domMb": 0.34,
+          "domNodes": 2070,
+          "listeners": 74
+        },
+        {
+          "stage": "type x50",
+          "ms": 3753,
+          "heapUsedMb": 50.79,
+          "retainedMb": 44.58,
+          "deltaMb": 3.85,
+          "heapTotalMb": 52.43,
+          "pageTotalMb": 76.32,
+          "domMb": 0.61,
+          "domNodes": 3992,
+          "listeners": 74
+        },
+        {
+          "stage": "destroy",
+          "ms": 0,
+          "heapUsedMb": 17.95,
+          "retainedMb": 11.74,
+          "deltaMb": -32.83,
+          "heapTotalMb": 18.7,
+          "pageTotalMb": 34.73,
+          "domMb": 0.04,
+          "domNodes": 32,
+          "listeners": 14
+        }
+      ]
+    },
+    {
+      "document": "synthetic-250",
+      "pages": 250,
+      "stages": [
+        {
+          "stage": "page loaded",
+          "ms": 0,
+          "heapUsedMb": 6.17,
+          "retainedMb": 0,
+          "deltaMb": 0,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 13.62,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "fonts loaded",
+          "ms": 0,
+          "heapUsedMb": 6.21,
+          "retainedMb": 0.04,
+          "deltaMb": 0.04,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 20.74,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "open",
+          "ms": 3870,
+          "heapUsedMb": 94.95,
+          "retainedMb": 88.74,
+          "deltaMb": 88.74,
+          "heapTotalMb": 96.25,
+          "pageTotalMb": 120.93,
+          "domMb": 0.37,
+          "domNodes": 2220,
+          "listeners": 74
+        },
+        {
+          "stage": "scroll through",
+          "ms": 9422,
+          "heapUsedMb": 94.48,
+          "retainedMb": 88.27,
+          "deltaMb": -0.46,
+          "heapTotalMb": 97,
+          "pageTotalMb": 121.9,
+          "domMb": 0.37,
+          "domNodes": 2220,
+          "listeners": 74
+        },
+        {
+          "stage": "type x50",
+          "ms": 5856,
+          "heapUsedMb": 100.14,
+          "retainedMb": 93.93,
+          "deltaMb": 5.68,
+          "heapTotalMb": 103.82,
+          "pageTotalMb": 127.78,
+          "domMb": 0.64,
+          "domNodes": 4146,
+          "listeners": 74
+        },
+        {
+          "stage": "destroy",
+          "ms": 0,
+          "heapUsedMb": 21.23,
+          "retainedMb": 15.02,
+          "deltaMb": -78.91,
+          "heapTotalMb": 21.86,
+          "pageTotalMb": 38.22,
+          "domMb": 0.04,
+          "domNodes": 32,
+          "listeners": 14
+        }
+      ]
+    },
+    {
+      "document": "synthetic-500",
+      "pages": 500,
+      "stages": [
+        {
+          "stage": "page loaded",
+          "ms": 0,
+          "heapUsedMb": 6.17,
+          "retainedMb": 0,
+          "deltaMb": 0,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 13.62,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "fonts loaded",
+          "ms": 0,
+          "heapUsedMb": 6.21,
+          "retainedMb": 0.04,
+          "deltaMb": 0.04,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 20.74,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "open",
+          "ms": 6765,
+          "heapUsedMb": 174.09,
+          "retainedMb": 167.88,
+          "deltaMb": 167.88,
+          "heapTotalMb": 181.7,
+          "pageTotalMb": 202.03,
+          "domMb": 0.42,
+          "domNodes": 2470,
+          "listeners": 74
+        },
+        {
+          "stage": "scroll through",
+          "ms": 20273,
+          "heapUsedMb": 172.63,
+          "retainedMb": 166.42,
+          "deltaMb": -1.46,
+          "heapTotalMb": 182.58,
+          "pageTotalMb": 203.48,
+          "domMb": 0.42,
+          "domNodes": 2470,
+          "listeners": 74
+        },
+        {
+          "stage": "type x50",
+          "ms": 7830,
+          "heapUsedMb": 179.51,
+          "retainedMb": 173.3,
+          "deltaMb": 6.94,
+          "heapTotalMb": 185.58,
+          "pageTotalMb": 210.53,
+          "domMb": 0.69,
+          "domNodes": 4402,
+          "listeners": 74
+        },
+        {
+          "stage": "destroy",
+          "ms": 0,
+          "heapUsedMb": 26.64,
+          "retainedMb": 20.43,
+          "deltaMb": -152.93,
+          "heapTotalMb": 27.35,
+          "pageTotalMb": 43.98,
+          "domMb": 0.04,
+          "domNodes": 32,
+          "listeners": 14
+        }
+      ]
+    },
+    {
+      "document": "synthetic-1000",
+      "pages": 1000,
+      "stages": [
+        {
+          "stage": "page loaded",
+          "ms": 0,
+          "heapUsedMb": 6.17,
+          "retainedMb": 0,
+          "deltaMb": 0,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 13.62,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "fonts loaded",
+          "ms": 0,
+          "heapUsedMb": 6.21,
+          "retainedMb": 0.04,
+          "deltaMb": 0.04,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 20.74,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "open",
+          "ms": 13020,
+          "heapUsedMb": 331.17,
+          "retainedMb": 324.96,
+          "deltaMb": 324.96,
+          "heapTotalMb": 339.96,
+          "pageTotalMb": 363.03,
+          "domMb": 0.51,
+          "domNodes": 2970,
+          "listeners": 74
+        },
+        {
+          "stage": "scroll through",
+          "ms": 40249,
+          "heapUsedMb": 327.68,
+          "retainedMb": 321.47,
+          "deltaMb": -3.46,
+          "heapTotalMb": 340.96,
+          "pageTotalMb": 365.39,
+          "domMb": 0.51,
+          "domNodes": 2970,
+          "listeners": 74
+        },
+        {
+          "stage": "type x50",
+          "ms": 10062,
+          "heapUsedMb": 338.78,
+          "retainedMb": 332.57,
+          "deltaMb": 11.1,
+          "heapTotalMb": 351.75,
+          "pageTotalMb": 376.65,
+          "domMb": 0.79,
+          "domNodes": 4894,
+          "listeners": 74
+        },
+        {
+          "stage": "destroy",
+          "ms": 0,
+          "heapUsedMb": 37.29,
+          "retainedMb": 31.08,
+          "deltaMb": -301.49,
+          "heapTotalMb": 38.2,
+          "pageTotalMb": 55.33,
+          "domMb": 0.04,
+          "domNodes": 32,
+          "listeners": 14
+        }
+      ]
+    },
+    {
+      "document": "demo",
+      "pages": 9,
+      "stages": [
+        {
+          "stage": "page loaded",
+          "ms": 0,
+          "heapUsedMb": 6.17,
+          "retainedMb": 0,
+          "deltaMb": 0,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 13.62,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "fonts loaded",
+          "ms": 0,
+          "heapUsedMb": 6.21,
+          "retainedMb": 0.04,
+          "deltaMb": 0.04,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 20.74,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "open",
+          "ms": 2356,
+          "heapUsedMb": 23.13,
+          "retainedMb": 16.92,
+          "deltaMb": 16.92,
+          "heapTotalMb": 23.82,
+          "pageTotalMb": 55.86,
+          "domMb": 0.16,
+          "domNodes": 955,
+          "listeners": 74
+        },
+        {
+          "stage": "scroll through",
+          "ms": 624,
+          "heapUsedMb": 24.36,
+          "retainedMb": 18.15,
+          "deltaMb": 1.23,
+          "heapTotalMb": 25.07,
+          "pageTotalMb": 57.14,
+          "domMb": 0.16,
+          "domNodes": 955,
+          "listeners": 74
+        },
+        {
+          "stage": "type x50",
+          "ms": 3092,
+          "heapUsedMb": 28.79,
+          "retainedMb": 22.58,
+          "deltaMb": 4.43,
+          "heapTotalMb": 29.7,
+          "pageTotalMb": 61.61,
+          "domMb": 0.22,
+          "domNodes": 1376,
+          "listeners": 74
+        },
+        {
+          "stage": "destroy",
+          "ms": 0,
+          "heapUsedMb": 19.86,
+          "retainedMb": 13.65,
+          "deltaMb": -8.89,
+          "heapTotalMb": 20.7,
+          "pageTotalMb": 37.22,
+          "domMb": 0.04,
+          "domNodes": 32,
+          "listeners": 14
+        }
+      ]
+    },
+    {
+      "document": "typing-perf-521pp",
+      "pages": 521,
+      "stages": [
+        {
+          "stage": "page loaded",
+          "ms": 0,
+          "heapUsedMb": 6.17,
+          "retainedMb": 0,
+          "deltaMb": 0,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 13.62,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "fonts loaded",
+          "ms": 0,
+          "heapUsedMb": 6.21,
+          "retainedMb": 0.04,
+          "deltaMb": 0.04,
+          "heapTotalMb": 7.07,
+          "pageTotalMb": 20.74,
+          "domMb": 0.03,
+          "domNodes": 31,
+          "listeners": 14
+        },
+        {
+          "stage": "open",
+          "ms": 14539,
+          "heapUsedMb": 187.01,
+          "retainedMb": 180.8,
+          "deltaMb": 180.8,
+          "heapTotalMb": 193.3,
+          "pageTotalMb": 232.42,
+          "domMb": 0.27,
+          "domNodes": 1414,
+          "listeners": 74
+        },
+        {
+          "stage": "scroll through",
+          "ms": 21308,
+          "heapUsedMb": 186.79,
+          "retainedMb": 180.58,
+          "deltaMb": -0.2,
+          "heapTotalMb": 194.58,
+          "pageTotalMb": 221.22,
+          "domMb": 0.27,
+          "domNodes": 1414,
+          "listeners": 74
+        },
+        {
+          "stage": "type x50",
+          "ms": 9408,
+          "heapUsedMb": 204.88,
+          "retainedMb": 198.67,
+          "deltaMb": 18.11,
+          "heapTotalMb": 214.87,
+          "pageTotalMb": 239.37,
+          "domMb": 0.37,
+          "domNodes": 2074,
+          "listeners": 74
+        },
+        {
+          "stage": "destroy",
+          "ms": 0,
+          "heapUsedMb": 36.6,
+          "retainedMb": 30.39,
+          "deltaMb": -168.29,
+          "heapTotalMb": 37.39,
+          "pageTotalMb": 56.31,
+          "domMb": 0.04,
+          "domNodes": 32,
+          "listeners": 14
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>docx-editor core memory benchmark</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      #viewport {
+        height: 100vh;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- The classes React's DocxEditor.Viewport and DocxEditor.Content render. The engine
+         finds its scroller by the scroll-container class; without it, it paints every page. -->
+    <div
+      id="viewport"
+      class="docx-editor docx-editor-one-surface docx-editor-one-surface__viewport docx-editor__scroll-container"
+    >
+      <div id="host" class="docx-paginated-surface"></div>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
